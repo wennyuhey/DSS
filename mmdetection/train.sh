@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=1 python tools/da_train.py configs/cityscapes/da_faster_rcnn_fpn_1x_cityscapes.py --resume-from /lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_cityscapes_20200502-829424c0.pth
