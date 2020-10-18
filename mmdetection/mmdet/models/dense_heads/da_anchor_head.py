@@ -458,7 +458,7 @@ class DAAnchorHead(DABaseDenseHead):
             bbox_targets,
             bbox_weights,
             avg_factor=num_total_samples)
-        loss_feat = torch.mean((feat_dis_scores - gt_domains[0])**2)
+        loss_feat = 0.5 * torch.mean((feat_dis_scores - gt_domains[0])**2)
         return loss_cls, loss_bbox, loss_feat
 
     @force_fp32(apply_to=('cls_scores', 'bbox_preds'))
