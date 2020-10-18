@@ -262,7 +262,7 @@ class DADistEvalHook(DAEvalHook):
         tmpdir = self.tmpdir
         if tmpdir is None:
             tmpdir = osp.join(runner.work_dir, '.eval_hook')
-        results = multi_gpu_test(
+        results = da_multi_gpu_test(
             runner.model,
             self.dataloader,
             tmpdir=tmpdir,

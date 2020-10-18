@@ -63,7 +63,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
         return [self.extract_feat(img) for img in imgs]
 
     @abstractmethod
-    def forward_train(self, imgs, img_metas, gt_domain, **kwargs):
+    def forward_train(self, img_s, img_metas_s, data_s, img_t, img_metas_t, data_t):
         """
         Args:
             img (list[Tensor]): List of tensors of shape (1, C, H, W).
@@ -155,7 +155,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
             return self.aug_test(imgs, img_metas, **kwargs)
 
     @auto_fp16(apply_to=('img', ))
-    def forward(self, img, img_metas, gt_domain, return_loss=True, **kwargs):
+    def forward(self, data_s, data_t, return_loss=True):
         """Calls either :func:`forward_train` or :func:`forward_test` depending
         on whether ``return_loss`` is ``True``.
 
@@ -165,10 +165,18 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
         should be double nested (i.e.  List[Tensor], List[List[dict]]), with
         the outer list indicating test time augmentations.
         """
+        img_s = data_s.pop('img')
+        img_metas_s = data_s.pop('img_metas')
+        domain_s = data_s.pop('domain')
+        img_t = data_t.pop('img')
+        img_metas_t = data_t.pop('img_metas')
+        domain_t = data_t.pop('domain')
+        
         if return_loss:
-            return self.forward_train(img, img_metas, gt_domain, **kwargs)
+            
+            return self.forward_train(img_s, img_metas_s, domain_s, data_s, img_t, img_metas_t, domain_t, data_t)
         else:
-            return self.forward_test(img, img_metas, **kwargs)
+            return self.forward_test(img_t, img_metas_t, **data_t)
 
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.
@@ -205,7 +213,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
 
         return loss, log_vars
 
-    def train_step(self, data, optimizer, domain):
+    def train_step(self, data_s, domain_s, data_t, domain_t, optimizer):
         """The iteration step during training.
 
         This method defines an iteration step during training, except for the
@@ -232,13 +240,13 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
                 DDP, it means the batch size on each GPU), which is used for \
                 averaging the logs.
         """
-        data.setdefault('gt_domain', domain)
+        data_s.update(domain=domain_s)
+        data_t.update(domain=domain_t)
+        data = {'data_s' : data_s, 'data_t': data_t}
         losses = self(**data)
-        #losses.pop('tempt')
         loss, log_vars = self._parse_losses(losses)
-
         outputs = dict(
-            loss=loss, log_vars=log_vars, num_samples=len(data['img_metas']))
+            loss=loss, log_vars=log_vars, num_samples=len(data_s['gt_bboxes']) + len(data_t['gt_bboxes']))
 
         return outputs
 

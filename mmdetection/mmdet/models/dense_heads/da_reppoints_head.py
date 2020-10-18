@@ -288,19 +288,10 @@ class DARepPointsHead(DAAnchorFreeHead):
             points_init = 0
         cls_feat = x
         pts_feat = x
-        dis_feat = self.gradreverse.apply(x)
-        #dis_feat = x
-        #dis_feat = x
         for cls_conv in self.cls_convs:
             cls_feat = cls_conv(cls_feat)
         for reg_conv in self.reg_convs:
             pts_feat = reg_conv(pts_feat)
-        for idx, dis_conv in enumerate(self.cls_domain):
-            if idx == 2:
-                dis_feat = dis_conv(dis_feat)
-                break
-            dis_feat = self.relu2(dis_conv(dis_feat))
-        feat_dis_scores = self.sigmoid(dis_feat)
         # initialize reppoints
         pts_out_init = self.reppoints_pts_init_out(
             self.relu(self.reppoints_pts_init_conv(pts_feat)))
@@ -323,7 +314,7 @@ class DARepPointsHead(DAAnchorFreeHead):
         else:
             pts_out_refine = pts_out_refine + pts_out_init.detach()
         tempt = torch.tensor([0], dtype=torch.float64)
-        return cls_out, pts_out_init, pts_out_refine, feat_dis_scores, tempt
+        return cls_out, pts_out_init, pts_out_refine
 
     def get_points(self, featmap_sizes, img_metas):
         """Get points according to feature map sizes.
@@ -559,20 +550,9 @@ class DARepPointsHead(DAAnchorFreeHead):
                 proposal_weights_list, num_total_pos, num_total_neg)
 
     def loss_single(self, cls_score, pts_pred_init, pts_pred_refine,
-                    feat_dis_scores, tempt, labels,label_weights, 
-                    gt_domain, bbox_gt_init, bbox_weights_init,
+                    labels,label_weights, bbox_gt_init, bbox_weights_init,
                     bbox_gt_refine, bbox_weights_refine, stride,
                     num_total_samples_init, num_total_samples_refine):
-        # feature domain classification loss
-        #if torch.mean(feat_dis_scores) <= 0 or torch.mean(feat_dis_scores) >= 1:
-        #print(gt_domain[0])
-        #print(torch.mean(feat_dis_scores))
-        #feat_loss = self.bce(torch.mean(feat_dis_scores), gt_domain[0].float())
-        feat_loss = torch.mean((feat_dis_scores - gt_domain[0])**2)
-        #if gt_domain == 1:
-            #feat_loss = 0.5 * torch.mean((1 - feat_dis_scores) ** 2)
-        #    return feat_loss, tempt#feat_loss, tempt #TODO
-
         #classification loss
         labels = labels.reshape(-1)
         label_weights = label_weights.reshape(-1)
@@ -604,25 +584,19 @@ class DARepPointsHead(DAAnchorFreeHead):
             bbox_gt_refine / normalize_term,
             bbox_weights_refine,
             avg_factor=num_total_samples_refine)
-        #feat_loss = 0.5 * torch.mean((feat_dis_scores) ** 2)
-        #feat_loss = 0.5 * torch.mean((feat_dis_scores) ** 2)
-        return loss_cls, loss_pts_init, loss_pts_refine, feat_loss, tempt
+        return loss_cls, loss_pts_init, loss_pts_refine
 
     def loss(self,
              cls_scores,
              pts_preds_init,
              pts_preds_refine,
-             feat_dis_scores,
-             tempt,
              gt_bboxes,
              gt_labels,
              img_metas,
-             gt_domains,
              gt_bboxes_ignore=None):
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(featmap_sizes) == len(self.point_generators)
         label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
-        gt_domains = [gt_domains for i in range(5)]
         # target for initial stage
         center_list, valid_flag_list = self.get_points(featmap_sizes,
                                                        img_metas)
@@ -684,16 +658,13 @@ class DARepPointsHead(DAAnchorFreeHead):
             num_total_pos_refine +
             num_total_neg_refine if self.sampling else num_total_pos_refine)
         # compute loss
-        loss_cls, loss_pts_init, loss_pts_refine, loss_feat, tempt = multi_apply(
+        loss_cls, loss_pts_init, loss_pts_refine = multi_apply(
         self.loss_single,
         cls_scores,
         pts_coordinate_preds_init,
         pts_coordinate_preds_refine,
-        feat_dis_scores,
-        tempt,
         labels_list,
         label_weights_list,
-        gt_domains,
         bbox_gt_list_init,
         bbox_weights_list_init,
         bbox_gt_list_refine,
@@ -701,26 +672,10 @@ class DARepPointsHead(DAAnchorFreeHead):
         self.point_strides,
         num_total_samples_init=num_total_samples_init,
         num_total_samples_refine=num_total_samples_refine)
-        """
-        if gt_domains[0] == 0:
-            loss_dict_all = {
-                'loss_cls': loss_cls,
-                'loss_pts_init': loss_pts_init,
-                'loss_pts_refine': loss_pts_refine,
-                'loss_feat': loss_feat,
-               # 'tempt': tempt
-            }
-        elif gt_domains[0] == 1:
-            loss_dict_all = {
-                'loss_feat': loss_feat,
-                'tempt': tempt
-            }
-        """
         loss_dict_all = {
             'loss_cls': loss_cls,
             'loss_pts_init': loss_pts_init,
             'loss_pts_refine': loss_pts_refine,
-            'loss_feat': loss_feat
         }
         return loss_dict_all
 

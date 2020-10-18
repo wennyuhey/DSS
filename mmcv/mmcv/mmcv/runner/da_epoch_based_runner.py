@@ -28,37 +28,32 @@ class DAEpochBasedRunner(DABaseRunner):
         self.mode = 'train'
         self.data_loader_t = data_loader_t
         self.data_loader_s = data_loader_s
-        self._max_iters = self._max_epochs * len(self.data_loader_t) *2
+        self._max_iter_per_epoch = max(len(self.data_loader_s), len(self.data_loader_t))
+        self._max_iters = self._max_epochs * self._max_iter_per_epoch
         self.call_hook('before_train_epoch')
         
-        self.indice_s = np.zeros(len(self.data_loader_s))
-        self.indice_t = np.ones(len(self.data_loader_s))
-        #self.indice_s = np.zeros(100)
-        #self.indice_t = np.ones(100)
-        self.indice_list = np.hstack((self.indice_s, self.indice_t))
-        np.random.shuffle(self.indice_list)
-       
+         
         self.iter_s = iter(self.data_loader_s)
         self.iter_t = iter(self.data_loader_t)
 
         time.sleep(2)  # Prevent possible deadlock during epoch transition
-        for i, input_domain in enumerate(self.indice_list):
+        for i in range(self._max_iter_per_epoch):
             self._inner_iter = i
             self.call_hook('before_train_iter')
             if self.batch_processor is None:
-                if input_domain == 0:
-                    input_data = self.iter_s.__next__()
-                    gt_domain = torch.tensor([0])
-                elif input_domain == 1:
-                    input_data = self.iter_t.__next__()
-                    gt_domain = torch.tensor([1])
-                outputs = self.model.train_step(input_data, self.optimizer,
-                                                gt_domain, **kwargs)
-                if math.isnan(outputs['loss']):
-                    pdb.set_trace()
+                try:
+                    input_data_s = self.iter_s.__next__()
+                except:
+                    self.iter_s = iter(self.data_loader_s)
+                try:
+                    input_data_t = self.iter_t.__next__()
+                except:
+                    self.iter_t = iter(self.data_loader_t)
+                outputs = self.model.train_step(input_data_s, torch.tensor([0]).to("cuda:0"), input_data_t, torch.tensor([1]).to("cuda:0"), self.optimizer, **kwargs)
             else:#TODO
-                outputs = self.batch_processor(
-                    self.model, data_batch, train_mode=True, **kwargs)
+                pass
+                #outputs = self.batch_processor(
+                #    self.model, data_batch, train_mode=True, **kwargs)
             if not isinstance(outputs, dict):
                 raise TypeError('"batch_processor()" or "model.train_step()"'
                                 ' must return a dict')
@@ -120,7 +115,7 @@ class DAEpochBasedRunner(DABaseRunner):
         for i, flow in enumerate(workflow):
             mode, epochs = flow
             if mode == 'train':
-                self._max_iters = self._max_epochs * len(data_loader_s[i]) * 2
+                self._max_iters = self._max_epochs * max(len(data_loader_t[i]), len(data_loader_s[i]))
                 break
 
         work_dir = self.work_dir if self.work_dir is not None else 'NONE'

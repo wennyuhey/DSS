@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from mmdet.core import bbox2result
-from ..builder import DETECTORS, build_backbone, build_head, build_neck
+from ..builder import DETECTORS, build_backbone, build_head, build_neck, build_discriminator
 from .da_base import DABaseDetector
 import pdb
 
@@ -19,6 +19,7 @@ class DASingleStageDetector(DABaseDetector):
                  backbone,
                  neck=None,
                  bbox_head=None,
+                 feat_dis_head=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
@@ -28,6 +29,7 @@ class DASingleStageDetector(DABaseDetector):
             self.neck = build_neck(neck)
         bbox_head.update(train_cfg=train_cfg)
         bbox_head.update(test_cfg=test_cfg)
+        self.feat_dis_head = build_discriminator(feat_dis_head)
         self.bbox_head = build_head(bbox_head)
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
@@ -67,11 +69,14 @@ class DASingleStageDetector(DABaseDetector):
         return outs
 
     def forward_train(self,
-                      img,
-                      img_metas,
-                      gt_domain,
-                      gt_bboxes,
-                      gt_labels,
+                      img_s,
+                      img_metas_s,
+                      domain_s,
+                      data_s,
+                      img_t,
+                      img_metas_t,
+                      domain_t,
+                      data_t,
                       gt_bboxes_ignore=None):
         """
         Args:
@@ -91,20 +96,16 @@ class DASingleStageDetector(DABaseDetector):
         Returns:
             dict[str, Tensor]: A dictionary of loss components.
         """
-        x = self.extract_feat(img)
-        losses = self.bbox_head.forward_train(x, img_metas, gt_bboxes,
-                                              gt_labels, gt_domain, gt_bboxes_ignore)
-        """
-        if gt_domain == 1:
-            losses.pop('loss_cls')
-            losses.pop('loss_pts_init')
-            losses.pop('loss_pts_refine')
-        """
-        #losses.pop('loss_feat')
-        losses.pop('loss_cls')
-        losses.pop('loss_pts_init')
-        losses.pop('loss_pts_refine')
-        
+        x_s = self.extract_feat(img_s)
+        x_t = self.extract_feat(img_t)
+        gt_bboxes = data_s['gt_bboxes']
+        gt_labels = data_s['gt_labels']
+        loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
+        loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
+        losses = self.bbox_head.forward_train(x_s, img_metas_s, x_t, img_metas_t, 
+                                              gt_bboxes, gt_labels, gt_bboxes_ignore)
+        losses.update(loss_feat_s=loss_feat_s['loss_feat'])
+        losses.update(loss_feat_t=loss_feat_t['loss_feat'])
         return losses
 
     def simple_test(self, img, img_metas, rescale=False):

@@ -7,7 +7,7 @@ from mmdet.core import (PointGenerator, build_assigner, build_sampler,
                         images_to_levels, multi_apply, multiclass_nms, unmap)
 from ..builder import DISCRIMINATORS, build_loss
 from .da_base_discriminator import DABaseDiscriminator
-import pdb
+from mmdet.utils import GradReverse
 
 
 @DISCRIMINATORS.register_module()
@@ -32,15 +32,16 @@ class DAFeatDiscriminator(DABaseDiscriminator):
     def __init__(self,
                  in_channels,
                  **kwargs):
-        super().__init__(in_channels, **kwargs)
-
+        self.in_channels = in_channels
+        super(DAFeatDiscriminator, self).__init__()
     def _init_layers(self):
         """Initialize layers of the head."""
         self.relu2 = nn.LeakyReLU(0.1, inplace=False)
         self.sigmoid = nn.Sigmoid()
         self.cls_domain = nn.ModuleList()
-        self.bce = nn.BCELoss()
-        for i, channels in enumerate([[self.feat_channels, self.feat_channels], [self.feat_channels, int(self.feat_channels/2)], [int(self.feat_channels/2), 1]]):
+        self.mse = nn.MSELoss()
+        self.gradreverse = GradReverse(1)
+        for i, channels in enumerate([[self.in_channels, self.in_channels], [self.in_channels, int(self.in_channels/2)], [int(self.in_channels/2), 1]]):
             chn_in = channels[0]
             chn_out = channels[1]
             self.cls_domain.append(
@@ -50,8 +51,8 @@ class DAFeatDiscriminator(DABaseDiscriminator):
                         1,
                         stride=1,
                         padding=0,
-                        conv_cfg=self.conv_cfg,
-                        norm_cfg=self.norm_cfg,
+                        conv_cfg=None,
+                        norm_cfg=None,
                         act_cfg=None))
 
     def init_weights(self):
@@ -63,7 +64,7 @@ class DAFeatDiscriminator(DABaseDiscriminator):
         return multi_apply(self.forward_single, feats)
 
     def forward_single(self, x):
-        dis_feat = x.detach()
+        dis_feat = self.gradreverse.apply(x)
         for idx, dis_conv in enumerate(self.cls_domain):
             if idx == 2:
                 dis_feat = dis_conv(dis_feat)
@@ -71,19 +72,18 @@ class DAFeatDiscriminator(DABaseDiscriminator):
             dis_feat = self.relu2(dis_conv(dis_feat))
         feat_dis_scores = self.sigmoid(dis_feat)
 
-        return feat_dis_scores
+        return feat_dis_scores, torch.tensor([0])
 
     def loss_single(self, feat_dis_scores, gt_domain):
         # feature domain classification loss
-        feat_loss = self.bce(torch.mean(feat_dis_scores), gt_domain[0].float())
-        return feat_loss
+        feat_loss = self.mse(torch.mean(feat_dis_scores), gt_domain[0].float())
+        return feat_loss, torch.tensor([0])
 
     def loss(self,
              feat_dis_scores,
-             img_metas,
              gt_domains):
         # compute loss
-        loss_feat= multi_apply(
+        loss_feat, tempt = multi_apply(
         self.loss_single,
         feat_dis_scores,
         gt_domains)

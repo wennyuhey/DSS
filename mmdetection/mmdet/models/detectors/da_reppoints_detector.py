@@ -16,13 +16,14 @@ class DARepPointsDetector(DASingleStageDetector):
     def __init__(self,
                  backbone,
                  neck,
+                 feat_dis_head,
                  bbox_head,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
         super(DARepPointsDetector,
-              self).__init__(backbone, neck, bbox_head, train_cfg, test_cfg,
-                             pretrained)
+              self).__init__(backbone, neck, bbox_head, feat_dis_head,
+                             train_cfg, test_cfg, pretrained)
 
     def merge_aug_results(self, aug_bboxes, aug_scores, img_metas):
         """Merge augmented detection bboxes and scores.

@@ -40,7 +40,10 @@ model = dict(
             loss_weight=1.0),
         loss_bbox_init=dict(type='SmoothL1Loss', beta=0.11, loss_weight=0.5),
         loss_bbox_refine=dict(type='SmoothL1Loss', beta=0.11, loss_weight=1.0),
-        transform_method='moment'))
+        transform_method='moment'),
+    feat_dis_head=dict(
+        type='DAFeatDiscriminator',
+        in_channels=256))
 # training and testing settings
 train_cfg = dict(
     init=dict(
@@ -65,9 +68,9 @@ test_cfg = dict(
     nms=dict(type='nms', iou_threshold=0.5),
     max_per_img=100)
 optimizer = dict(lr=0.001, paramwise_cfg = dict(custom_keys={
-                'backbone': dict(lr_mult=0, decay_mult=0),
-                'neck': dict(lr_mult=0, decay_mult=0),
-                'bbox_head': dict(lr_mult=0, decay_mult=0),
+                'backbone': dict(lr_mult=0.01, decay_mult=1),
+                'neck': dict(lr_mult=0.01, decay_mult=1),
+                'bbox_head': dict(lr_mult=0.5, decay_mult=1),
                 # bbox_head params------------------------------
                 #'moment_transfer': dict(lr_mult=1, decay_mult=1),
                 #'cls_convs': dict(lr_mult=1, decay_mult=1),
@@ -79,6 +82,6 @@ optimizer = dict(lr=0.001, paramwise_cfg = dict(custom_keys={
                 #'reppoints_pts_refine_conv'
                 #'reppoints_pts_refine_out'
                 #-----------------------------------------------
-                'cls_domain': dict(lr_mult=1, decay_mult=1)})
+                'cls_domain': dict(lr_mult=0.5, decay_mult=1)})
 )
 #optimizer = dict(lr=0.01)

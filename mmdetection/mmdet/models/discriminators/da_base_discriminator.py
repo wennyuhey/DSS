@@ -10,7 +10,8 @@ class DABaseDiscriminator(nn.Module, metaclass=ABCMeta):
 
     def __init__(self):
         super(DABaseDiscriminator, self).__init__()
-
+        self._init_layers()
+        self.init_weights()
     @abstractmethod
     def loss(self, **kwargs):
         """Compute losses of the head."""
@@ -31,6 +32,8 @@ class DABaseDiscriminator(nn.Module, metaclass=ABCMeta):
             tuple:
                 losses: (dict[str, Tensor]): A dictionary of loss components.
         """
-        outs = self(x) #discriminator.forward()
-        loss_inputs = outs + (gt_domains)
-        losses = self.loss(*loss_inputs)
+        gt_domains = [gt_domains for i in range(len(x))]
+        outs, tempt = self(x) #discriminator.forward()
+        #loss_inputs = outs + (gt_domains)
+        losses = self.loss(outs, gt_domains)
+        return losses
