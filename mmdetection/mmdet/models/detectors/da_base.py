@@ -155,7 +155,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
             return self.aug_test(imgs, img_metas, **kwargs)
 
     @auto_fp16(apply_to=('img', ))
-    def forward(self, data_s, data_t, return_loss=True):
+    def forward(self, data_t, data_s=None, return_loss=True, **kwargs):
         """Calls either :func:`forward_train` or :func:`forward_test` depending
         on whether ``return_loss`` is ``True``.
 
@@ -165,18 +165,18 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
         should be double nested (i.e.  List[Tensor], List[List[dict]]), with
         the outer list indicating test time augmentations.
         """
-        img_s = data_s.pop('img')
-        img_metas_s = data_s.pop('img_metas')
-        domain_s = data_s.pop('domain')
-        img_t = data_t.pop('img')
-        img_metas_t = data_t.pop('img_metas')
-        domain_t = data_t.pop('domain')
-        
         if return_loss:
-            
+            img_s = data_s.pop('img')
+            img_metas_s = data_s.pop('img_metas')
+            domain_s = data_s.pop('domain')
+            img_t = data_t.pop('img')
+            img_metas_t = data_t.pop('img_metas')
+            domain_t = data_t.pop('domain')
             return self.forward_train(img_s, img_metas_s, domain_s, data_s, img_t, img_metas_t, domain_t, data_t)
         else:
-            return self.forward_test(img_t, img_metas_t, **data_t)
+            img = data_t.pop('img')
+            img_metas = data_t.pop('img_metas')
+            return self.forward_test(img, img_metas, **kwargs, **data_t)
 
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.

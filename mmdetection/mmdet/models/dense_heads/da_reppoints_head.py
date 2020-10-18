@@ -683,8 +683,6 @@ class DARepPointsHead(DAAnchorFreeHead):
                    cls_scores,
                    pts_preds_init,
                    pts_preds_refine,
-                   feat_dis_scores,
-                   tempt,
                    img_metas,
                    cfg=None,
                    rescale=False,

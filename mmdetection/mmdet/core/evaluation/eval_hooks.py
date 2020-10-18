@@ -258,7 +258,22 @@ class DADistEvalHook(DAEvalHook):
     def after_train_epoch(self, runner):
         if not self.evaluation_flag(runner):
             return
-        from mmdet.apis import multi_gpu_test
+        from mmdet.apis import da_multi_gpu_test
+        tmpdir = self.tmpdir
+        if tmpdir is None:
+            tmpdir = osp.join(runner.work_dir, '.eval_hook')
+        results = da_multi_gpu_test(
+            runner.model,
+            self.dataloader,
+            tmpdir=tmpdir,
+            gpu_collect=self.gpu_collect)
+        if runner.rank == 0:
+            print('\n')
+            self.evaluate(runner, results)
+    def before_train_epoch(self, runner):
+        if not self.evaluation_flag(runner):
+            return
+        from mmdet.apis import da_multi_gpu_test
         tmpdir = self.tmpdir
         if tmpdir is None:
             tmpdir = osp.join(runner.work_dir, '.eval_hook')
