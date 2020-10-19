@@ -24,39 +24,17 @@ class DARPNHead(RPNTestMixin, DAAnchorHead):
 
     def _init_layers(self):
         """Initialize layers of the head."""
-        self.gradreverse = GradReverse()
-        self.leakyrelu = nn.LeakyReLU(0.1, inplace=False)
-        self.sigmoid = nn.Sigmoid()
-
         self.rpn_conv = nn.Conv2d(
             self.in_channels, self.feat_channels, 3, padding=1)
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_anchors * self.cls_out_channels, 1)
         self.rpn_reg = nn.Conv2d(self.feat_channels, self.num_anchors * 4, 1)
-        self.cls_domain = nn.ModuleList()
-        for i, channels in enumerate([[self.feat_channels, self.feat_channels],
-                                      [self.feat_channels, int(self.feat_channels/2)],
-                                      [int(self.feat_channels/2), 1]]):
-            chn_in = channels[0]
-            chn_out = channels[1]
-            self.cls_domain.append(
-                    ConvModule(
-                        chn_in,
-                        chn_out,
-                        1,
-                        stride=1,
-                        padding=0,
-                        conv_cfg=None,
-                        norm_cfg=None,
-                        act_cfg=None))
 
     def init_weights(self):
         """Initialize weights of the head."""
         normal_init(self.rpn_conv, std=0.01)
         normal_init(self.rpn_cls, std=0.01)
         normal_init(self.rpn_reg, std=0.01)
-        for m in self.cls_domain:
-            normal_init(m.conv, std=0.01)
 
     def forward_single(self, x):
         """Forward feature map of a single scale level."""
@@ -64,23 +42,13 @@ class DARPNHead(RPNTestMixin, DAAnchorHead):
         x = F.relu(x, inplace=True)
         rpn_cls_score = self.rpn_cls(x)
         rpn_bbox_pred = self.rpn_reg(x)
-        dis_feat = self.gradreverse.apply(x)
-        for idx, dis_conv in enumerate(self.cls_domain):
-            if idx == 2:
-                dis_feat = dis_conv(dis_feat)
-                break
-            dis_feat = self.leakyrelu(dis_conv(dis_feat))
-        feat_dis_scores = self.sigmoid(dis_feat)
-
-        return rpn_cls_score, rpn_bbox_pred, feat_dis_scores
+        return rpn_cls_score, rpn_bbox_pred
 
     def loss(self,
              cls_scores,
              bbox_preds,
-             feat_dis_scores,
              gt_bboxes,
              img_metas,
-             gt_domains,
              gt_bboxes_ignore=None):
         """Compute losses of the head.
 
@@ -102,15 +70,12 @@ class DARPNHead(RPNTestMixin, DAAnchorHead):
         losses = super(DARPNHead, self).loss(
             cls_scores,
             bbox_preds,
-            feat_dis_scores,
             gt_bboxes,
             None,
             img_metas,
-            gt_domains,
             gt_bboxes_ignore=gt_bboxes_ignore)
         return dict(loss_rpn_cls=losses['loss_cls'], 
-                    loss_rpn_bbox=losses['loss_bbox'],
-                    loss_rpn_feat=losses['loss_feat'])
+                    loss_rpn_bbox=losses['loss_bbox'])
 
     def _get_bboxes_single(self,
                            cls_scores,

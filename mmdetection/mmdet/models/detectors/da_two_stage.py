@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 # from mmdet.core import bbox2result, bbox2roi, build_assigner, build_sampler
-from ..builder import DETECTORS, build_backbone, build_head, build_neck
+from ..builder import DETECTORS, build_backbone, build_head, build_neck, build_discriminator
 from .da_base import DABaseDetector
 
 
@@ -19,6 +19,7 @@ class DATwoStageDetector(DABaseDetector):
                  neck=None,
                  rpn_head=None,
                  roi_head=None,
+                 feat_dis_head=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
@@ -41,6 +42,9 @@ class DATwoStageDetector(DABaseDetector):
             roi_head.update(train_cfg=rcnn_train_cfg)
             roi_head.update(test_cfg=test_cfg.rcnn)
             self.roi_head = build_head(roi_head)
+        
+        if feat_dis_head is not None:
+            self.feat_dis_head = build_discriminator(feat_dis_head)
 
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
@@ -56,6 +60,10 @@ class DATwoStageDetector(DABaseDetector):
     def with_roi_head(self):
         """bool: whether the detector has a RoI head"""
         return hasattr(self, 'roi_head') and self.roi_head is not None
+
+    @property
+    def with_feat_dis_head(self):
+        return hasattr(self, 'feat_dis_head') and self.feat_dis_head is not None
 
     def init_weights(self, pretrained=None):
         """Initialize the weights in detector.
@@ -76,7 +84,7 @@ class DATwoStageDetector(DABaseDetector):
             self.rpn_head.init_weights()
         if self.with_roi_head:
             self.roi_head.init_weights(pretrained)
-
+            
     def extract_feat(self, img):
         """Directly extract features from the backbone+neck."""
         x = self.backbone(img)
@@ -103,11 +111,14 @@ class DATwoStageDetector(DABaseDetector):
         return outs
 
     def forward_train(self,
-                      img,
-                      img_metas,
-                      gt_domain,
-                      gt_bboxes,
-                      gt_labels,
+                      img_s, 
+                      img_metas_s, 
+                      domain_s, 
+                      data_s, 
+                      img_t, 
+                      img_metas_t, 
+                      domain_t, 
+                      data_t,
                       gt_bboxes_ignore=None,
                       gt_masks=None,
                       proposals=None,
@@ -140,7 +151,15 @@ class DATwoStageDetector(DABaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
-        x = self.extract_feat(img)
+        x_s = self.extract_feat(img_s)
+        x_t = self.extract_feat(img_t)
+
+        gt_bboxes = data_s['gt_bboxes']
+        gt_labels = data_s['gt_labels']
+
+        loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
+        loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
+
         losses = dict()
 
         # RPN forward and loss
@@ -148,29 +167,25 @@ class DATwoStageDetector(DABaseDetector):
             proposal_cfg = self.train_cfg.get('rpn_proposal',
                                               self.test_cfg.rpn)
             rpn_losses, proposal_list = self.rpn_head.forward_train(
-                x,
-                img_metas,
+                x_s,
+                img_metas_s,
+                x_t,
+                img_metas_t,
                 gt_bboxes,
                 gt_labels=None,
-                gt_domain=gt_domain,
                 gt_bboxes_ignore=gt_bboxes_ignore,
                 proposal_cfg=proposal_cfg)
             losses.update(rpn_losses)
         else:
             proposal_list = proposals
 
-        roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
+        roi_losses = self.roi_head.forward_train(x_s, img_metas_s, proposal_list,
                                                  gt_bboxes, gt_labels,
                                                  gt_bboxes_ignore, gt_masks,
                                                  **kwargs)
         losses.update(roi_losses)
-        if gt_domain == 1:
-            losses.pop('loss_rpn_cls')
-            losses.pop('loss_rpn_bbox')
-            losses.pop('loss_cls')
-            losses.pop('acc')
-            losses.pop('loss_bbox')
-
+        losses.update(loss_feat_s)
+        losses.update(loss_feat_t)
         return losses
 
     async def async_simple_test(self,

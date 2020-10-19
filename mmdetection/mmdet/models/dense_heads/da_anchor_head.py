@@ -103,37 +103,14 @@ class DAAnchorHead(DABaseDenseHead):
 
     def _init_layers(self):
         """Initialize layers of the head."""
-        self.gradreverse = GradReverse()
-        self.leakyrelu = nn.LeakyReLU(0.1, inplace=False)
-        self.sigmoid = nn.Sigmoid()
-
         self.conv_cls = nn.Conv2d(self.in_channels,
                                   self.num_anchors * self.cls_out_channels, 1)
         self.conv_reg = nn.Conv2d(self.in_channels, self.num_anchors * 4, 1)
-        self.cls_domain = nn.ModuleList()
-        for i, channels in enumerate([[self.feat_channels, self.feat_channels], 
-                                      [self.feat_channels, int(self.feat_channels/2)], 
-                                      [int(self.feat_channels/2), 1]]):
-            chn_in = channels[0]
-            chn_out = channels[1]
-            self.cls_domain.append(
-                    ConvModule(
-                        chn_in,
-                        chn_out,
-                        1,
-                        stride=1,
-                        padding=0,
-                        conv_cfg=self.conv_cfg,
-                        norm_cfg=None,
-                        act_cfg=None))
-        
 
     def init_weights(self):
         """Initialize weights of the head."""
         normal_init(self.conv_cls, std=0.01)
         normal_init(self.conv_reg, std=0.01)
-        for m in self.cls_domain:
-            normal_init(m.conv, std=0.01)
 
     def forward_single(self, x):
         """Forward feature of a single scale level.
@@ -150,16 +127,8 @@ class DAAnchorHead(DABaseDenseHead):
         """
         cls_score = self.conv_cls(x)
         bbox_pred = self.conv_reg(x)
-        dis_feat = self.gradreverse.apply(x)
-        for idx, dis_conv in enumerate(self.cls_domain):
-            if idx == 2:
-                dis_feat = dis_conv(dis_feat)
-                break
-            dis_feat = self.leakyrelu(dis_conv(dis_feat))
-        feat_dis_scores = self.sigmoid(dis_feat)
-
         
-        return cls_score, bbox_pred, feat_dis_scores
+        return cls_score, bbox_pred
 
     def forward(self, feats):
         """Forward features from the upstream network.
@@ -412,8 +381,7 @@ class DAAnchorHead(DABaseDenseHead):
 
         return res + tuple(rest_results)
 
-    def loss_single(self, feat_dis_scores, gt_domains,
-                    cls_score, bbox_pred, anchors, labels, label_weights,
+    def loss_single(self, cls_score, bbox_pred, anchors, labels, label_weights,
                     bbox_targets, bbox_weights, num_total_samples):
         """Compute loss of a single scale level.
 
@@ -458,18 +426,15 @@ class DAAnchorHead(DABaseDenseHead):
             bbox_targets,
             bbox_weights,
             avg_factor=num_total_samples)
-        loss_feat = 0.5 * torch.mean((feat_dis_scores - gt_domains[0])**2)
-        return loss_cls, loss_bbox, loss_feat
+        return loss_cls, loss_bbox
 
     @force_fp32(apply_to=('cls_scores', 'bbox_preds'))
     def loss(self,
              cls_scores,
              bbox_preds,
-             feat_dis_scores,
              gt_bboxes,
              gt_labels,
              img_metas,
-             gt_domains,
              gt_bboxes_ignore=None):
         """Compute losses of the head.
 
@@ -491,7 +456,6 @@ class DAAnchorHead(DABaseDenseHead):
         """
         featmap_sizes = [featmap.size()[-2:] for featmap in cls_scores]
         assert len(featmap_sizes) == self.anchor_generator.num_levels
-        gt_domains = [gt_domains for i in range(5)]
         device = cls_scores[0].device
 
         anchor_list, valid_flag_list = self.get_anchors(
@@ -521,10 +485,8 @@ class DAAnchorHead(DABaseDenseHead):
         all_anchor_list = images_to_levels(concat_anchor_list,
                                            num_level_anchors)
 
-        losses_cls, losses_bbox, losses_feat = multi_apply(
+        losses_cls, losses_bbox = multi_apply(
             self.loss_single,
-            feat_dis_scores,
-            gt_domains,
             cls_scores,
             bbox_preds,
             all_anchor_list,
@@ -534,14 +496,12 @@ class DAAnchorHead(DABaseDenseHead):
             bbox_weights_list,
             num_total_samples=num_total_samples)
         return dict(loss_cls=losses_cls, 
-                    loss_bbox=losses_bbox,
-                    loss_feat=losses_feat)
+                    loss_bbox=losses_bbox)
 
     @force_fp32(apply_to=('cls_scores', 'bbox_preds'))
     def get_bboxes(self,
                    cls_scores,
                    bbox_preds,
-                   feat_dis_scores,
                    img_metas,
                    cfg=None,
                    rescale=False):
