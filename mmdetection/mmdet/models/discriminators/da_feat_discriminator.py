@@ -41,7 +41,9 @@ class DAFeatDiscriminator(DABaseDiscriminator):
         self.cls_domain = nn.ModuleList()
         self.mse = nn.MSELoss()
         self.gradreverse = GradReverse(1)
-        for i, channels in enumerate([[self.in_channels, self.in_channels], [self.in_channels, int(self.in_channels/2)], [int(self.in_channels/2), 1]]):
+        for i, channels in enumerate([[self.in_channels, self.in_channels], 
+                                      [self.in_channels, int(self.in_channels/2)], 
+                                      [int(self.in_channels/2), 1]]):
             chn_in = channels[0]
             chn_out = channels[1]
             self.cls_domain.append(
