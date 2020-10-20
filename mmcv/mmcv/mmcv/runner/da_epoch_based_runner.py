@@ -45,10 +45,12 @@ class DAEpochBasedRunner(DABaseRunner):
                     input_data_s = self.iter_s.__next__()
                 except:
                     self.iter_s = iter(self.data_loader_s)
+                    input_data_s = self.iter_s.__next__()
                 try:
                     input_data_t = self.iter_t.__next__()
                 except:
                     self.iter_t = iter(self.data_loader_t)
+                    input_data_t = self.iter_t.__next__()
                 outputs = self.model.train_step(input_data_s, torch.tensor([0]).to("cuda:0"), input_data_t, torch.tensor([1]).to("cuda:0"), self.optimizer, **kwargs)
             else:#TODO
                 pass

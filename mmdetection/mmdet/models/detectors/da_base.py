@@ -118,7 +118,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
         else:
             raise NotImplementedError
 
-    def forward_test(self, imgs, img_metas, **kwargs):
+    def forward_test(self, imgs, img_metas, domain, **kwargs):
         """
         Args:
             imgs (List[Tensor]): the outer list indicates test-time
@@ -145,7 +145,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
             # proposals.
             if 'proposals' in kwargs:
                 kwargs['proposals'] = kwargs['proposals'][0]
-            return self.simple_test(imgs[0], img_metas[0], **kwargs)
+            return self.simple_test(imgs[0], img_metas[0], domain, **kwargs)
         else:
             assert imgs[0].size(0) == 1, 'aug test does not support ' \
                                          'inference with batch size ' \
@@ -176,7 +176,8 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
         else:
             img = data_t.pop('img')
             img_metas = data_t.pop('img_metas')
-            return self.forward_test(img, img_metas, **kwargs, **data_t)
+            domain = data_t.pop('domain')
+            return self.forward_test(img, img_metas, domain, **kwargs)
 
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.

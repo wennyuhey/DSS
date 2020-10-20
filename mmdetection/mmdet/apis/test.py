@@ -74,7 +74,8 @@ def da_single_gpu_test(model,
     prog_bar = mmcv.ProgressBar(len(dataset))
     for i, data in enumerate(data_loader):
         with torch.no_grad():
-            result = model(return_loss=False, rescale=True, **data, gt_domain = torch.tensor([1], dtype=torch.float32))
+            data.update({'domain': torch.tensor([1]).to('cuda:0')})
+            result = model(data, return_loss=False, rescale=True)
         batch_size = len(result)
         if show or out_dir:
             if batch_size == 1 and isinstance(data['img'][0], torch.Tensor):
@@ -141,6 +142,7 @@ def da_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         prog_bar = mmcv.ProgressBar(len(dataset))
     time.sleep(2)  # This line can prevent deadlock problem in some cases.
     for i, data in enumerate(data_loader):
+        data.update({'domain': torch.tensor([1]).to('cuda:0')})
         with torch.no_grad():
             result = model(data, return_loss=False, rescale=True)
             # encode mask results

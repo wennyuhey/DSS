@@ -4,7 +4,7 @@ import torch.nn as nn
 # from mmdet.core import bbox2result, bbox2roi, build_assigner, build_sampler
 from ..builder import DETECTORS, build_backbone, build_head, build_neck, build_discriminator
 from .da_base import DABaseDetector
-
+from mmdet.utils import convert_splitbn_model 
 
 @DETECTORS.register_module()
 class DATwoStageDetector(DABaseDetector):
@@ -25,6 +25,7 @@ class DATwoStageDetector(DABaseDetector):
                  pretrained=None):
         super(DATwoStageDetector, self).__init__()
         self.backbone = build_backbone(backbone)
+        self.backbone = convert_splitbn_model(self.backbone)
 
         if neck is not None:
             self.neck = build_neck(neck)
@@ -85,9 +86,9 @@ class DATwoStageDetector(DABaseDetector):
         if self.with_roi_head:
             self.roi_head.init_weights(pretrained)
             
-    def extract_feat(self, img):
+    def extract_feat(self, img, domain):
         """Directly extract features from the backbone+neck."""
-        x = self.backbone(img)
+        x = self.backbone(img, domain)
         if self.with_neck:
             x = self.neck(x)
         return x
@@ -151,8 +152,8 @@ class DATwoStageDetector(DABaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
-        x_s = self.extract_feat(img_s)
-        x_t = self.extract_feat(img_t)
+        x_s = self.extract_feat(img_s, domain_s)
+        x_t = self.extract_feat(img_t, domain_t)
 
         gt_bboxes = data_s['gt_bboxes']
         gt_labels = data_s['gt_labels']
@@ -206,11 +207,11 @@ class DATwoStageDetector(DABaseDetector):
         return await self.roi_head.async_simple_test(
             x, proposal_list, img_meta, rescale=rescale)
 
-    def simple_test(self, img, img_metas, proposals=None, rescale=False):
+    def simple_test(self, img, img_metas, domain, proposals=None, rescale=False):
         """Test without augmentation."""
         assert self.with_bbox, 'Bbox head must be implemented.'
 
-        x = self.extract_feat(img)
+        x = self.extract_feat(img, domain)
         if proposals is None:
             proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
         else:
