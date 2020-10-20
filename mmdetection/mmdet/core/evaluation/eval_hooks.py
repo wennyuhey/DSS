@@ -206,14 +206,12 @@ class DAEvalHook(DAHook):
         from mmdet.apis import da_single_gpu_test
         results = da_single_gpu_test(runner.model, self.dataloader, show=False)
         self.evaluate(runner, results)
-    """
     def before_train_epoch(self, runner):
         if not self.evaluation_flag(runner):
             return
         from mmdet.apis import da_single_gpu_test
         results = da_single_gpu_test(runner.model, self.dataloader, show=False)
         self.evaluate(runner, results)
-    """
     def evaluate(self, runner, results):
         eval_res = self.dataloader.dataset.evaluate(
             results, logger=runner.logger, **self.eval_kwargs)
@@ -270,7 +268,6 @@ class DADistEvalHook(DAEvalHook):
         if runner.rank == 0:
             print('\n')
             self.evaluate(runner, results)
-    """
     def before_train_epoch(self, runner):
         if not self.evaluation_flag(runner):
             return
@@ -286,4 +283,3 @@ class DADistEvalHook(DAEvalHook):
         if runner.rank == 0:
             print('\n')
             self.evaluate(runner, results)
-    """

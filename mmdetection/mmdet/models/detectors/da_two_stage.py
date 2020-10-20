@@ -24,8 +24,10 @@ class DATwoStageDetector(DABaseDetector):
                  test_cfg=None,
                  pretrained=None):
         super(DATwoStageDetector, self).__init__()
+        self.auxBN = backbone['type'] == 'AuxResNet'
         self.backbone = build_backbone(backbone)
-        self.backbone = convert_splitbn_model(self.backbone)
+#        if self.auxBN:
+#            self.backbone = convert_splitbn_model(self.backbone)
 
         if neck is not None:
             self.neck = build_neck(neck)
@@ -88,7 +90,10 @@ class DATwoStageDetector(DABaseDetector):
             
     def extract_feat(self, img, domain):
         """Directly extract features from the backbone+neck."""
-        x = self.backbone(img, domain)
+        if self.auxBN:
+            x = self.backbone(img, domain)
+        else:
+            x = self.backbone(img)
         if self.with_neck:
             x = self.neck(x)
         return x
@@ -152,15 +157,13 @@ class DATwoStageDetector(DABaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
+        gt_bboxes = data_s['gt_bboxes']
+        gt_labels = data_s['gt_labels']
         x_s = self.extract_feat(img_s, domain_s)
         x_t = self.extract_feat(img_t, domain_t)
 
-        gt_bboxes = data_s['gt_bboxes']
-        gt_labels = data_s['gt_labels']
-
         loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
         loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
-
         losses = dict()
 
         # RPN forward and loss

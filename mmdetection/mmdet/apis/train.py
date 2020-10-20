@@ -9,7 +9,7 @@ from mmcv.utils import build_from_cfg
 
 from mmdet.core import DistEvalHook, EvalHook, Fp16OptimizerHook, DADistEvalHook, DAEvalHook
 from mmdet.datasets import build_dataloader, build_dataset
-from mmdet.utils import get_root_logger
+from mmdet.utils import get_root_logger, convert_splitbn_model
 import pdb
 
 
@@ -216,7 +216,7 @@ def da_train_detector(model,
         meta=meta)
     # an ugly workaround to make .log and .log.json filenames the same
     runner.timestamp = timestamp
-
+    
     # fp16 setting
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
@@ -265,4 +265,6 @@ def da_train_detector(model,
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
+    runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+
     runner.run(data_loaders_s, data_loaders_t, cfg.workflow, cfg.total_epochs)
