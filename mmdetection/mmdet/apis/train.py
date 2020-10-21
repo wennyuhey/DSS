@@ -209,7 +209,12 @@ def da_train_detector(model,
     # build runner
     optimizer = {}
     for name, module in model.module.named_children():
-        optimizer.update({name: build_optimizer(module, cfg.optimizer)})
+        if 'backbone' in name:
+            optimizer.update({name: build_optimizer(module, cfg.optimizer_backbone)})
+        elif 'dis' in name:
+            optimizer.update({name: build_optimizer(module, cfg.optimizer_discriminator)})
+        else:
+            optimizer.update({name: build_optimizer(module, cfg.optimizer)})
     #optimizer = build_optimizer(model, cfg.optimizer)
     runner = DAEpochBasedRunner(
         model,

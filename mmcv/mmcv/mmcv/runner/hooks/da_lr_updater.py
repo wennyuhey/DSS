@@ -188,7 +188,7 @@ class DAGanLrUpdaterHook(DALrUpdaterHook):
 
         if self.flag == 0 and 'dis' in optim_k:
             return 0
-        if self.flag == 1 and 'backbone' in optim_k:
+        if self.flag == 1 and 'dis' not in optim_k:
             return 0
         else :
             if isinstance(self.step, int):
