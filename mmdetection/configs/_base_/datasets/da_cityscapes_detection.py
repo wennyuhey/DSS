@@ -30,11 +30,11 @@ test_pipeline = [
 ]
 
 data_s = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=4,
     workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=1,
+        times=2,
         dataset=dict(
             type=dataset_type,
             ann_file=data_root_s +
@@ -53,11 +53,11 @@ data_s = dict(
         pipeline=test_pipeline))
 
 data_t = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=4,
     workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=1,
+        times=2,
         dataset=dict(
             type=dataset_type,
             ann_file=data_root_t +

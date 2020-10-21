@@ -46,7 +46,7 @@ optimizer = dict(
         'neck': dict(lr_mult=1, decay_mult=1),
         'rpn_head': dict(lr_mult=1, decay_mult=1),
         'roi_head': dict(lr_mult=1, decay_mult=1),
-        'feat_dis_head': dict(lr_mult=0.1, decay_mult=1)}))
+        'feat_dis_head': dict(lr_mult=0.05, decay_mult=1)}))
 
 optimizer_config = dict(grad_clip=None)
 # learning policy
@@ -56,7 +56,7 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[8, 18])
+    step=[8, 28])
 total_epochs = 30  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
