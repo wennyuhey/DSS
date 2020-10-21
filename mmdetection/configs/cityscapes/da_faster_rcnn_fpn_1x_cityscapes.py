@@ -56,7 +56,7 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     step=[18, 25],
-    strategy=3)
+    strategy=5)
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
