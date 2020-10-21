@@ -37,13 +37,12 @@ class DALrUpdaterHook(DAHook):
                 '"warmup_iters" must be a positive integer'
             assert 0 < warmup_ratio <= 1.0, \
                 '"warmup_ratio" must be in range (0,1]'
-
         self.by_epoch = by_epoch
         self.warmup = warmup
         self.warmup_iters = warmup_iters
         self.warmup_ratio = warmup_ratio
         self.warmup_by_epoch = warmup_by_epoch
-
+       
         if self.warmup_by_epoch:
             self.warmup_epochs = self.warmup_iters
             self.warmup_iters = None
@@ -67,6 +66,8 @@ class DALrUpdaterHook(DAHook):
         raise NotImplementedError
 
     def get_regular_lr(self, runner):
+        import pdb
+        pdb.set_trace()
         if isinstance(runner.optimizer, dict):
             lr_groups = {}
             for k in runner.optimizer.keys():
@@ -80,15 +81,27 @@ class DALrUpdaterHook(DAHook):
         else:
             return [self.get_lr(runner, _base_lr) for _base_lr in self.base_lr]
 
-    def get_warmup_lr(self, cur_iters):
-        if self.warmup == 'constant':
-            warmup_lr = [_lr * self.warmup_ratio for _lr in self.regular_lr]
-        elif self.warmup == 'linear':
-            k = (1 - cur_iters / self.warmup_iters) * (1 - self.warmup_ratio)
-            warmup_lr = [_lr * (1 - k) for _lr in self.regular_lr]
-        elif self.warmup == 'exp':
-            k = self.warmup_ratio**(1 - cur_iters / self.warmup_iters)
-            warmup_lr = [_lr * k for _lr in self.regular_lr]
+    def get_warmup_lr(self, runner, cur_iters):
+        if isinstance(runner.optimizer, dict):
+            warmup_lr = {}
+            for name, regular_lr in self.regular_lr:
+                if self.warmup == 'constant':
+                    warmup_lr.update({name: [_lr * self.warmup_ratio for _lr in regular_lr]})
+                elif self.warmup == 'linear':
+                    k = (1 - cur_iters / self.warmup_iters) * (1 - self.warmup_ratio)
+                    warmup_lr.update({name: [_lr * (1 - k) for _lr in regular_lr]})
+                elif self.warmup == 'exp':
+                    k = self.warmup_ratio**(1 - cur_iters / self.warmup_iters)
+                    warmup_lr.update({name: [_lr * k for _lr in regular_lr]})
+        else:
+            if self.warmup == 'constant':
+                warmup_lr = [_lr * self.warmup_ratio for _lr in self.regular_lr]
+            elif self.warmup == 'linear':
+                k = (1 - cur_iters / self.warmup_iters) * (1 - self.warmup_ratio)
+                warmup_lr = [_lr * (1 - k) for _lr in self.regular_lr]
+            elif self.warmup == 'exp':
+                k = self.warmup_ratio**(1 - cur_iters / self.warmup_iters)
+                warmup_lr = [_lr * k for _lr in self.regular_lr]
         return warmup_lr
 
     def before_run(self, runner):
@@ -112,7 +125,7 @@ class DALrUpdaterHook(DAHook):
 
     def before_train_epoch(self, runner):
         if self.warmup_iters is None:
-            epoch_len = len(runner.data_loader_s) + int(len(runner.data_lodar_t)/3)
+            epoch_len = max(len(runner.data_loader_s), len(runner.data_lodar_t))
             self.warmup_iters = self.warmup_epochs * epoch_len
 
         if not self.by_epoch:
@@ -136,8 +149,91 @@ class DALrUpdaterHook(DAHook):
             elif cur_iter == self.warmup_iters:
                 self._set_lr(runner, self.regular_lr)
             else:
-                warmup_lr = self.get_warmup_lr(cur_iter)
+                warmup_lr = self.get_warmup_lr(runner, cur_iter)
                 self._set_lr(runner, warmup_lr)
+
+@DAHOOKS.register_module()
+class DAGanLrUpdaterHook(DALrUpdaterHook):
+    def __init__(self, step, strategy, gamma=0.1, **kwargs):
+        self.step = step
+        self.gamma = gamma
+        self.strategy = strategy
+        self.count = 0
+        self.flag = 0
+        super(DAGanLrUpdaterHook, self).__init__(**kwargs)
+
+    def before_run(self, runner):
+        # NOTE: when resuming from a checkpoint, if 'initial_lr' is not saved,
+        # it will be set according to the optimizer params
+        if isinstance(runner.optimizer, dict):
+            self.base_lr = {}
+            for k, optim in runner.optimizer.items():
+                for group in optim.param_groups:
+                    group.setdefault('initial_lr', group['lr'])
+                _base_lr = [
+                    group['initial_lr'] for group in optim.param_groups
+                ]
+                self.base_lr.update({k: _base_lr})
+        else:
+            for group in runner.optimizer.param_groups:
+                group.setdefault('initial_lr', group['lr'])
+            self.base_lr = [
+                group['initial_lr'] for group in runner.optimizer.param_groups
+            ]
+        self.count = 0
+
+    def get_lr(self, runner, base_lr, optim_k):
+        progress = runner.epoch if self.by_epoch else runner.iter
+
+        if self.flag == 0 and 'dis' in optim_k:
+            return 0
+        if self.flag == 1 and 'backbone' in optim_k:
+            return 0
+        else :
+            if isinstance(self.step, int):
+                return base_lr * (self.gamma**(progress // self.step))
+
+            exp = len(self.step)
+            for i, s in enumerate(self.step):
+                if progress < s:
+                    exp = i
+                    break
+        return base_lr * self.gamma**exp
+
+
+    def get_regular_lr(self, runner):
+        if isinstance(runner.optimizer, dict):
+            lr_groups = {}
+            for k in runner.optimizer.keys():
+                _lr_group = [
+                    self.get_lr(runner, _base_lr, k)
+                    for _base_lr in self.base_lr[k]
+                ]
+                lr_groups.update({k: _lr_group})
+
+            return lr_groups
+        else:
+            return [self.get_lr(runner, _base_lr) for _base_lr in self.base_lr]
+
+    def before_train_epoch(self, runner):
+        if self.count % self.strategy == 0:
+            self.flag = 1
+        else:
+            self.flag = 0
+
+        if self.warmup_iters is None:
+            epoch_len = max(len(runner.data_loader_s), len(runner.data_lodar_t))
+            self.warmup_iters = self.warmup_epochs * epoch_len
+
+        if not self.by_epoch:
+            return
+
+        self.regular_lr = self.get_regular_lr(runner)
+        self._set_lr(runner, self.regular_lr)
+
+    def after_train_epoch(self, runner):
+        self.count = self.count + 1
+
 
 
 @DAHOOKS.register_module()
