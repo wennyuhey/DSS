@@ -5,7 +5,6 @@ from torch.nn import GroupNorm, LayerNorm
 
 from mmcv.utils import _BatchNorm, _InstanceNorm, build_from_cfg, is_list_of
 from .builder import OPTIMIZER_BUILDERS, OPTIMIZERS
-import pdb
 
 
 @OPTIMIZER_BUILDERS.register_module()
@@ -130,8 +129,6 @@ class DefaultOptimizerConstructor:
             module (nn.Module): The module to be added.
             prefix (str): The prefix of the module
         """
-        import pdb
-        pdb.set_trace()
         # get param-wise options
         custom_keys = self.paramwise_cfg.get('custom_keys', {})
         # first sort with alphabet order and then sort with reversed len of str

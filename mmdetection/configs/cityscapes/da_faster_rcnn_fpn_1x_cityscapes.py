@@ -35,16 +35,28 @@ model = dict(
         in_channels=256))
 # optimizer
 # lr is set for a batch size of 8
-optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(
+    type='SGD',
+    lr=0.01,
+    weight_decay=0.0001,
+    paramwise_cfg=dict(
+        custom_keys=dict(
+            backbone=dict(lr_mult=1, decay_mult=1),
+            neck=dict(lr_mult=1, decay_mult=1),
+            rpn_head=dict(lr_mult=1, decay_mult=1),
+            roi_head=dict(lr_mult=1, decay_mult=1),
+            feat_dis_head=dict(lr_mult=0.1, decay_mult=1))))
+
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
-    policy='step',
+    policy='gan',
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[18])
+    step=[18],
+    strategy=2)
 total_epochs = 30  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO

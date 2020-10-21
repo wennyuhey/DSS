@@ -84,7 +84,8 @@ class DALrUpdaterHook(DAHook):
     def get_warmup_lr(self, runner, cur_iters):
         if isinstance(runner.optimizer, dict):
             warmup_lr = {}
-            for name, regular_lr in self.regular_lr:
+            for name in self.regular_lr.keys():
+                regular_lr = self.regular_lr[name]
                 if self.warmup == 'constant':
                     warmup_lr.update({name: [_lr * self.warmup_ratio for _lr in regular_lr]})
                 elif self.warmup == 'linear':

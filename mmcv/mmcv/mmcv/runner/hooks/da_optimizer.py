@@ -21,7 +21,11 @@ class DAOptimizerHook(DAHook):
             return clip_grad.clip_grad_norm_(params, **self.grad_clip)
 
     def after_train_iter(self, runner):
-        runner.optimizer.zero_grad()
+        if isinstance(runner.optimizer, dict):
+            for k, optim in runner.optimizer.items():
+                optim.zero_grad()
+        else:
+            runner.optimizer.zero_grad()
         runner.outputs['loss'].backward()
         if self.grad_clip is not None:
             grad_norm = self.clip_grads(runner.model.parameters())
@@ -29,7 +33,12 @@ class DAOptimizerHook(DAHook):
                 # Add grad norm to the logger
                 runner.log_buffer.update({'grad_norm': float(grad_norm)},
                                          runner.outputs['num_samples'])
-        runner.optimizer.step()
+        if isinstance(runner.optimizer, dict):
+            for k, optim in runner.optimizer.items():
+                optim.step()
+        else:
+            runner.optimizer.step()
+
 
 
 @DAHOOKS.register_module()
