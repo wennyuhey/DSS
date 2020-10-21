@@ -35,20 +35,6 @@ model = dict(
         in_channels=256))
 # optimizer
 # lr is set for a batch size of 8
-<<<<<<< HEAD
-#optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
-optimizer = dict(
-    type='SGD',
-    lr=0.01,
-    weight_decay=0.0001, 
-    paramwise_cfg = dict(
-        custom_keys={
-        'backbone': dict(lr_mult=1, decay_mult=1),
-        'neck': dict(lr_mult=1, decay_mult=1),
-        'rpn_head': dict(lr_mult=1, decay_mult=1),
-        'roi_head': dict(lr_mult=1, decay_mult=1),
-        'feat_dis_head': dict(lr_mult=0.05, decay_mult=1)}))
-=======
 optimizer = dict(
     type='SGD',
     lr=0.01,
@@ -61,8 +47,6 @@ optimizer_discriminator = dict(
     type='SGD',
     lr=0.001,
     weight_decay=0.0001)
->>>>>>> gan
-
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
@@ -70,14 +54,9 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-<<<<<<< HEAD
     # [7] yields higher performance than [6]
-    step=[8, 28])
-total_epochs = 30  # actual epoch = 8 * 8 = 64
-=======
     step=[18, 25],
     strategy=5)
 total_epochs = 40  # actual epoch = 8 * 8 = 64
->>>>>>> gan
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
