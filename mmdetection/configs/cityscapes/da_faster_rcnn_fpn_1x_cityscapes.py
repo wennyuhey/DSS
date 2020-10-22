@@ -12,9 +12,9 @@ model = dict(
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
         norm_cfg=dict(type='BN', requires_grad=True),
-        norm_eval=True,
+        norm_eval=False,
         style='pytorch'),
-
+    #neck=dict(norm_cfg=dict(type='GN', num_group=32, requires_grad=True),)
     roi_head=dict(
         bbox_head=dict(
             type='Shared2FCBBoxHead',
@@ -22,6 +22,7 @@ model = dict(
             fc_out_channels=1024,
             roi_feat_size=7,
             num_classes=8,
+     #       norm_cfg=dict(type='GN', num_group=32, requires_grad=True),
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0., 0., 0., 0.],
@@ -37,7 +38,7 @@ model = dict(
 # lr is set for a batch size of 8
 optimizer = dict(
     type='SGD',
-    lr=0.001,
+    lr=0.01,
     weight_decay=0.0001)
 optimizer_backbone = dict(
     type='SGD',
@@ -50,13 +51,12 @@ optimizer_discriminator = dict(
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(
-    policy='gan',
+    policy='step',
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[20, 25],
-    strategy=2)
+    step=[25])
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO

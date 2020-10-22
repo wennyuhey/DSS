@@ -12,16 +12,14 @@ class SplitBatchNorm2d(torch.nn.BatchNorm2d):
             nn.BatchNorm2d(num_features, eps, momentum, affine, track_running_stats) for _ in range(num_splits - 1)])
 
     def forward(self, input: torch.Tensor, domain):
-        import pdb
-        pdb.set_trace()
         if self.training:  # aux BN only relevant while training
             if domain == 0:
-                x = [super().forward(input)]
+                return super().forward(input)
             elif domain == 1:
                 x = []
                 for i, a in enumerate(self.aux_bn):
                     x.append(a(input))
-                return torch.cat(x, dim=0)
+                return x[0]
         else:
             out = []
             for i, a in enumerate(self.aux_bn):

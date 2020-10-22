@@ -155,6 +155,9 @@ def da_train_detector(model,
                       meta=None):
     logger = get_root_logger(cfg.log_level)
     # prepare data loaders
+    # if 'Aux' in cfg.model.backbone.type:
+    #     model.backbone = convert_splitbn_model(model.backbone)
+
     dataset_s = dataset_s if isinstance(dataset_s, (list, tuple)) else [dataset_s]
     dataset_t = dataset_t if isinstance(dataset_t, (list, tuple)) else [dataset_t]
     if 'imgs_per_gpu' in cfg.data_s:
