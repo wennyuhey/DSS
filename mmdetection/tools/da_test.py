@@ -14,6 +14,7 @@ from mmdet.core import wrap_fp16_model
 from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.models import build_detector
+from mmdet.utils import convert_splitbn_model
 
 
 def parse_args():
@@ -151,7 +152,7 @@ def main():
     if samples_per_gpu > 1:
         # Replace 'ImageToTensor' to 'DefaultFormatBundle'
         cfg.data_t.val.pipeline = replace_ImageToTensor(cfg.data_t.val.pipeline)
-    dataset = build_dataset(cfg.data_t.val)
+    dataset = build_dataset(cfg.data_s.val)
     data_loader = build_dataloader(
         dataset,
         samples_per_gpu=samples_per_gpu,
@@ -162,6 +163,9 @@ def main():
     # build the model and load checkpoint
     model = build_detector(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
     fp16_cfg = cfg.get('fp16', None)
+    if 'Aux' in cfg.model.backbone.type:
+        model.backbone = convert_splitbn_model(model.backbone)
+
     if fp16_cfg is not None:
         wrap_fp16_model(model)
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
@@ -187,8 +191,6 @@ def main():
         outputs = multi_gpu_test(model, data_loader, args.tmpdir,
                                  args.gpu_collect)
     rank, _ = get_dist_info()
-    import pdb
-    pdb.set_trace()
     if rank == 0:
         if args.out:
             print(f'\nwriting results to {args.out}')

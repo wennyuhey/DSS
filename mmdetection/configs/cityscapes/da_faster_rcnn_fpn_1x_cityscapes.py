@@ -37,7 +37,7 @@ model = dict(
 # lr is set for a batch size of 8
 optimizer = dict(
     type='SGD',
-    lr=0.01,
+    lr=0.001,
     weight_decay=0.0001)
 optimizer_backbone = dict(
     type='SGD',
@@ -55,8 +55,8 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[18, 25],
-    strategy=5)
+    step=[20, 25],
+    strategy=2)
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
