@@ -88,10 +88,10 @@ class DATwoStageDetector(DABaseDetector):
         if self.with_roi_head:
             self.roi_head.init_weights(pretrained)
             
-    def extract_feat(self, img, domain):
+    def extract_feat(self, img, domain, return_loss):
         """Directly extract features from the backbone+neck."""
         if self.auxBN:
-            x = self.backbone(img, domain)
+            x = self.backbone(img, domain, return_loss)
         else:
             x = self.backbone(img)
         if self.with_neck:
@@ -159,8 +159,8 @@ class DATwoStageDetector(DABaseDetector):
         """
         gt_bboxes = data_s['gt_bboxes']
         gt_labels = data_s['gt_labels']
-        x_s = self.extract_feat(img_s, domain_s)
-        x_t = self.extract_feat(img_t, domain_t)
+        x_s = self.extract_feat(img_s, domain_s, return_loss=True)
+        x_t = self.extract_feat(img_t, domain_t, return_loss=True)
 
         loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
         loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
@@ -214,7 +214,7 @@ class DATwoStageDetector(DABaseDetector):
         """Test without augmentation."""
         assert self.with_bbox, 'Bbox head must be implemented.'
 
-        x = self.extract_feat(img, domain)
+        x = self.extract_feat(img, domain, return_loss=False)
         if proposals is None:
             proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
         else:
