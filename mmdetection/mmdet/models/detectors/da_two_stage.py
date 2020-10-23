@@ -20,6 +20,7 @@ class DATwoStageDetector(DABaseDetector):
                  rpn_head=None,
                  roi_head=None,
                  feat_dis_head=None,
+                 ins_dis_head=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
@@ -48,7 +49,8 @@ class DATwoStageDetector(DABaseDetector):
         
         if feat_dis_head is not None:
             self.feat_dis_head = build_discriminator(feat_dis_head)
-
+        if ins_dis_head is not None:
+            self.ins_dis_head = build_discriminator(ins_dis_head)
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
 
@@ -157,8 +159,11 @@ class DATwoStageDetector(DABaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
-        gt_bboxes = data_s['gt_bboxes']
-        gt_labels = data_s['gt_labels']
+        gt_bboxes_s = data_s['gt_bboxes']
+        gt_labels_s = data_s['gt_labels']
+        gt_bboxes_t = data_t['gt_bboxes']
+        gt_labels_t = data_t['gt_labels']
+
         x_t = self.extract_feat(img_t, domain_t)
         x_s = self.extract_feat(img_s, domain_s)
 
@@ -183,13 +188,25 @@ class DATwoStageDetector(DABaseDetector):
         else:
             proposal_list = proposals
 
-        roi_losses = self.roi_head.forward_train(x_s, img_metas_s, proposal_list,
-                                                 gt_bboxes, gt_labels,
-                                                 gt_bboxes_ignore, gt_masks,
-                                                 **kwargs)
+        roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list,
+                                                              gt_bboxes_s, gt_labels_s,
+                                                              gt_bboxes_ignore, gt_masks,
+                                                              **kwargs)
+        bbox_feat_s = bbox_feat_s.permute(1,2,3,0)
+        _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list,
+                                                     gt_bboxes_t, gt_labels_t,
+                                                     gt_bboxes_ignore, gt_masks,
+                                                     **kwargs)
+        bbox_feat_t = bbox_feat_t.permute(1,2,3,0)
+
+        loss_ins_s = self.self.ins_dis_head(bbox_feat_s, domain_s)
+        loss_ins_t = self.self.ins_dis_head(bbox_feat_t, domain_t)
+
         losses.update(roi_losses)
         losses.update(loss_feat_s)
         losses.update(loss_feat_t)
+        losses.update(loss_ins_s)
+        losses.update(loss_ins_t)
         return losses
 
     async def async_simple_test(self,
