@@ -6,4 +6,4 @@ PORT=${PORT:-17500}
 
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
 python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
-    $(dirname "$0")/da_train.py $CONFIG --resume-from /lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_cityscapes_20200502-829424c0.pth --work-dir /lustre/S/wangyu/aux_normon_freeze1 --launcher pytorch ${@:3}
+    $(dirname "$0")/da_train.py $CONFIG --resume-from /lustre/S/wangyu/PretrainedModels/fasterrcnn_r101_cityscapes.pth --work-dir /lustre/S/wangyu/aux_normon_r101 --launcher pytorch ${@:3}
