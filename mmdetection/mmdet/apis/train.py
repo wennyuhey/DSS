@@ -226,7 +226,9 @@ def da_train_detector(model,
         meta=meta)
     # an ugly workaround to make .log and .log.json filenames the same
     runner.timestamp = timestamp
-    
+    if 'Aux' in cfg.model.backbone.type:
+        runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+
     # fp16 setting
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
@@ -270,12 +272,12 @@ def da_train_detector(model,
             priority = hook_cfg.pop('priority', 'NORMAL')
             hook = build_from_cfg(hook_cfg, DAHOOKS)
             runner.register_hook(hook, priority=priority)
-
+    
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
-    if 'Aux' in cfg.model.backbone.type:
-        runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+    #if 'Aux' in cfg.model.backbone.type:
+    #    runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
 
     runner.run(data_loaders_s, data_loaders_t, cfg.workflow, cfg.total_epochs)
