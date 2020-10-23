@@ -39,7 +39,8 @@ class DAInsDiscriminator(DABaseDiscriminator):
                      loss_weight=1.0),
                  **kwargs):
         self.in_channels = in_channels
-        super(DAFeatDiscriminator, self).__init__()
+        self.loss_cls = loss_cls
+        super(DAInsDiscriminator, self).__init__()
     def _init_layers(self):
         """Initialize layers of the head."""
         self.dropout = nn.Dropout()
@@ -49,20 +50,23 @@ class DAInsDiscriminator(DABaseDiscriminator):
                                          nn.Linear(100,100),
                                          nn.BatchNorm1d(100)])
         self.gradreverse = GradReverse(1)
-        self.loss_cls = build_loss(loss_cls) 
+        self.loss_cls = build_loss(self.loss_cls) 
+        self.relu = nn.ReLU()
+        self.mse = nn.MSELoss()
     def init_weights(self):
         """Initialize weights of the head."""
         for m in self.cls_domain:
             normal_init(m, std=0.01)
 
     def forward(self, feats):
-        return multi_apply(self.forward_single, feats)
+        return self.forward_single(feats)
 
     def forward_single(self, x):
         dis_feat = self.gradreverse.apply(x)
         for layer in self.cls_domain:
             dis_feat = layer(dis_feat)
-            if isinstance(dis_feat, nn.modules.batchnorm._BatchNorm):
+            if isinstance(layer, nn.modules.batchnorm._BatchNorm):
+                dis_feat = self.relu(dis_feat)
                 dis_feat = self.dropout(dis_feat)
         ins_dis_scores = self.cls_linear(dis_feat)
 
@@ -70,18 +74,24 @@ class DAInsDiscriminator(DABaseDiscriminator):
 
     def loss_single(self, feat_dis_scores, gt_domain):
         # feature domain classification loss
-        target = [gt_domain[0].float() for i in range(len(feat_dis_scores))]
-        ins_loss = self.loss_cls(torch.mean(feat_dis_scores), target)
+        #target = [gt_domain[0].float() for i in range(len(feat_dis_scores))]
+        ins_loss = self.mse(torch.mean(feat_dis_scores), gt_domain.float())
         return ins_loss, torch.tensor([0])
 
     def loss(self,
              feat_dis_scores,
              gt_domains):
         # compute loss
+        """
         loss_feat, tempt = multi_apply(
         self.loss_single,
         feat_dis_scores,
         gt_domains)
+        loss_dict_all = {
+            'loss_ins': loss_feat}
+        return loss_dict_all
+        """
+        loss_feat, tempt = self.loss_single(feat_dis_scores, gt_domains)
         loss_dict_all = {
             'loss_ins': loss_feat}
         return loss_dict_all

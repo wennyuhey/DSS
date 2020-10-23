@@ -192,21 +192,19 @@ class DATwoStageDetector(DABaseDetector):
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
                                                               **kwargs)
-        bbox_feat_s = bbox_feat_s.permute(1,2,3,0)
+        bbox_feat_s = bbox_feat_s.view(-1, 256*7*7)
         _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list_t,
                                                      gt_bboxes_t, gt_labels_t,
                                                      gt_bboxes_ignore, gt_masks,
                                                      **kwargs)
-        bbox_feat_t = bbox_feat_t.permute(1,2,3,0)
-
-        loss_ins_s = self.self.ins_dis_head(bbox_feat_s, domain_s)
-        loss_ins_t = self.self.ins_dis_head(bbox_feat_t, domain_t)
-
+        bbox_feat_t = bbox_feat_t.view(-1, 256*7*7)
+        loss_ins_s = self.ins_dis_head.forward_train(bbox_feat_s, domain_s)
+        loss_ins_t = self.ins_dis_head.forward_train(bbox_feat_t, domain_t)
         losses.update(roi_losses)
         losses.update(loss_feat_s)
         losses.update(loss_feat_t)
-        losses.update(loss_ins_s)
-        losses.update(loss_ins_t)
+        losses.update({'loss_ins_s': loss_ins_s['loss_ins']})
+        losses.update({'loss_ins_t': loss_ins_t['loss_ins']})
         return losses
 
     async def async_simple_test(self,

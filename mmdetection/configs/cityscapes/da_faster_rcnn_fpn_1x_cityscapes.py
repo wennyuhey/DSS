@@ -6,8 +6,8 @@ _base_ = [
 model = dict(
     pretrained=None,
     backbone=dict(
-        type='AuxResNet',
-        depth=101,
+        type='ResNet',
+        depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
@@ -33,7 +33,10 @@ model = dict(
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
      feat_dis_head=dict(
         type='DAFeatDiscriminator',
-        in_channels=256))
+        in_channels=256),
+     ins_dis_head=dict(
+        type='DAInsDiscriminator',
+        in_channels=256*7*7))
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(

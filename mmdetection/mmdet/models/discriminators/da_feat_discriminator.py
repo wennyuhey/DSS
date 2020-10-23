@@ -85,6 +85,7 @@ class DAFeatDiscriminator(DABaseDiscriminator):
              feat_dis_scores,
              gt_domains):
         # compute loss
+        gt_domains = [gt_domains for i in range(5)]
         loss_feat, tempt = multi_apply(
         self.loss_single,
         feat_dis_scores,
