@@ -175,25 +175,25 @@ class DATwoStageDetector(DABaseDetector):
         if self.with_rpn:
             proposal_cfg = self.train_cfg.get('rpn_proposal',
                                               self.test_cfg.rpn)
-            rpn_losses, proposal_list = self.rpn_head.forward_train(
+            rpn_losses, proposal_list_s, proposal_list_t = self.rpn_head.forward_train(
                 x_s,
                 img_metas_s,
                 x_t,
                 img_metas_t,
-                gt_bboxes,
-                gt_labels=None,
+                gt_bboxes_s,
+                gt_labels_s=None,
                 gt_bboxes_ignore=gt_bboxes_ignore,
                 proposal_cfg=proposal_cfg)
             losses.update(rpn_losses)
         else:
             proposal_list = proposals
 
-        roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list,
+        roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list_s,
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
                                                               **kwargs)
         bbox_feat_s = bbox_feat_s.permute(1,2,3,0)
-        _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list,
+        _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list_t,
                                                      gt_bboxes_t, gt_labels_t,
                                                      gt_bboxes_ignore, gt_masks,
                                                      **kwargs)
