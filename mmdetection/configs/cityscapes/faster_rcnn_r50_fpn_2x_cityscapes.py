@@ -32,6 +32,6 @@ lr_config = dict(
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
     step=[7])
-total_epochs = 8  # actual epoch = 8 * 8 = 64
+total_epochs = 12  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 

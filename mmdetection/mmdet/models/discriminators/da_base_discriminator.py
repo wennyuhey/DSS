@@ -32,7 +32,7 @@ class DABaseDiscriminator(nn.Module, metaclass=ABCMeta):
             tuple:
                 losses: (dict[str, Tensor]): A dictionary of loss components.
         """
-        gt_domains = [gt_domains for i in range(len(x))]
+#        gt_domains = [gt_domains for i in range(len(x))]
         outs, tempt = self(x) #discriminator.forward()
         #loss_inputs = outs + (gt_domains)
         losses = self.loss(outs, gt_domains)

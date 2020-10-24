@@ -11,7 +11,7 @@ from mmdet.utils import GradReverse
 
 
 @DISCRIMINATORS.register_module()
-class DAFeatDiscriminator(DABaseDiscriminator):
+class DAInsDiscriminator(DABaseDiscriminator):
     """RepPoint head.
 
     Args:
@@ -31,65 +31,67 @@ class DAFeatDiscriminator(DABaseDiscriminator):
 
     def __init__(self,
                  in_channels,
+                 loss_cls=dict(
+                     type='FocalLoss',
+                     use_sigmoid=True,
+                     gamma=0.01,
+                     alpha=1,
+                     loss_weight=1.0),
                  **kwargs):
         self.in_channels = in_channels
-        super(DAFeatDiscriminator, self).__init__()
+        self.loss_cls = loss_cls
+        super(DAInsDiscriminator, self).__init__()
     def _init_layers(self):
         """Initialize layers of the head."""
-        self.relu2 = nn.LeakyReLU(0.1, inplace=False)
-        self.sigmoid = nn.Sigmoid()
-        self.cls_domain = nn.ModuleList()
-        self.mse = nn.MSELoss()
+        self.dropout = nn.Dropout()
+        self.cls_linear = nn.Linear(100, 1)
+        self.cls_domain = nn.ModuleList([nn.Linear(self.in_channels,100),
+                                         nn.BatchNorm1d(100),
+                                         nn.Linear(100,100),
+                                         nn.BatchNorm1d(100)])
         self.gradreverse = GradReverse(1)
-        for i, channels in enumerate([[self.in_channels, self.in_channels], 
-                                      [self.in_channels, int(self.in_channels/2)], 
-                                      [int(self.in_channels/2), 1]]):
-            chn_in = channels[0]
-            chn_out = channels[1]
-            self.cls_domain.append(
-                    ConvModule(
-                        chn_in,
-                        chn_out,
-                        1,
-                        stride=1,
-                        padding=0,
-                        conv_cfg=None,
-                        norm_cfg=None,
-                        act_cfg=None))
-
+        self.loss_cls = build_loss(self.loss_cls) 
+        self.relu = nn.ReLU()
+        self.mse = nn.MSELoss()
     def init_weights(self):
         """Initialize weights of the head."""
         for m in self.cls_domain:
-            normal_init(m.conv, std=0.01)
+            normal_init(m, std=0.01)
 
     def forward(self, feats):
-        return multi_apply(self.forward_single, feats)
+        return self.forward_single(feats)
 
     def forward_single(self, x):
         dis_feat = self.gradreverse.apply(x)
-        for idx, dis_conv in enumerate(self.cls_domain):
-            if idx == 2:
-                dis_feat = dis_conv(dis_feat)
-                break
-            dis_feat = self.relu2(dis_conv(dis_feat))
-        feat_dis_scores = self.sigmoid(dis_feat)
+        for layer in self.cls_domain:
+            dis_feat = layer(dis_feat)
+            if isinstance(layer, nn.modules.batchnorm._BatchNorm):
+                dis_feat = self.relu(dis_feat)
+                dis_feat = self.dropout(dis_feat)
+        ins_dis_scores = self.cls_linear(dis_feat)
 
-        return feat_dis_scores, torch.tensor([0])
+        return ins_dis_scores, torch.tensor([0])
 
     def loss_single(self, feat_dis_scores, gt_domain):
         # feature domain classification loss
-        feat_loss = self.mse(torch.mean(feat_dis_scores), gt_domain[0].float())
-        return feat_loss, torch.tensor([0])
+        #target = [gt_domain[0].float() for i in range(len(feat_dis_scores))]
+        ins_loss = self.mse(torch.mean(feat_dis_scores), gt_domain.float())
+        return ins_loss, torch.tensor([0])
 
     def loss(self,
              feat_dis_scores,
              gt_domains):
         # compute loss
-        gt_domains = [gt_domains for i in range(5)]
+        """
         loss_feat, tempt = multi_apply(
         self.loss_single,
         feat_dis_scores,
         gt_domains)
         loss_dict_all = {
-            'loss_feat': loss_feat}
+            'loss_ins': loss_feat}
+        return loss_dict_all
+        """
+        loss_feat, tempt = self.loss_single(feat_dis_scores, gt_domains)
+        loss_dict_all = {
+            'loss_ins': loss_feat}
         return loss_dict_all

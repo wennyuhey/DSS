@@ -51,7 +51,7 @@ class DABaseDenseHead(nn.Module, metaclass=ABCMeta):
                 proposal_list (list[Tensor]): Proposals of each image.
         """
         outs_s = self(x_s)
-        #outs_t = self(x_t)
+        outs_t = self(x_t)
         if gt_labels is None:
             loss_inputs_s = outs_s + (gt_bboxes, img_metas_s)
         else:
@@ -61,5 +61,5 @@ class DABaseDenseHead(nn.Module, metaclass=ABCMeta):
             return losses
         else:
             proposal_list_s = self.get_bboxes(*outs_s, img_metas_s, cfg=proposal_cfg)
-            #proposal_list_t = self.get_bboxes(*outs_t, img_metas_t, cfg=proposal_cfg)
-            return losses, proposal_list_s#, proposal_t
+            proposal_list_t = self.get_bboxes(*outs_t, img_metas_t, cfg=proposal_cfg)
+            return losses, proposal_list_s, proposal_list_t

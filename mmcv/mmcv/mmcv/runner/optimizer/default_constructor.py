@@ -130,8 +130,6 @@ class DefaultOptimizerConstructor:
             prefix (str): The prefix of the module
         """
         # get param-wise options
-        import pdb
-        pdb.set_trace()
         custom_keys = self.paramwise_cfg.get('custom_keys', {})
         # first sort with alphabet order and then sort with reversed len of str
         sorted_keys = sorted(sorted(custom_keys.keys()), key=len, reverse=True)

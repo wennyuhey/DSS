@@ -33,7 +33,11 @@ model = dict(
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
      feat_dis_head=dict(
         type='DAFeatDiscriminator',
-        in_channels=256))
+        in_channels=256),
+     ins_dis_head=None)
+     #ins_dis_head=dict(
+    #     type='DAInsDiscriminator',
+    #    in_channels=256*7*7))
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(
@@ -56,7 +60,7 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[25])
+    step=[35])
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
