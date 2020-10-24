@@ -78,7 +78,7 @@ class BasicBlock(nn.Module):
             out = self.norm2(out, domain)
             if self.downsample is not None:
                 for layer in self.downsample:
-                    if isinstance(layer, _BatchNorm):
+                    if isinstance(layer, (_BatchNorm, nn.GroupNorm)):
                         identity = layer(identity, domain)
                     else:
                         identity = layer(identity)
@@ -291,7 +291,7 @@ class Bottleneck(nn.Module):
                 out = self.forward_plugin(out, self.after_conv3_plugin_names)
             if self.downsample is not None:
                 for layer in self.downsample:
-                    if isinstance(layer, _BatchNorm):
+                    if isinstance(layer, _BatchNorm) or isinstance(layer, nn.GroupNorm):
                         identity = layer(identity, domain)
                     else:
                         identity = layer(identity)

@@ -7,11 +7,15 @@ model = dict(
     pretrained=None,
     backbone=dict(
         type='AuxResNet',
-        depth=101,
+        depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_cfg=dict(
+            type='GN',
+            num_groups=32,
+            requires_grad=True),
+        #norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
         style='pytorch'),
     #neck=dict(norm_cfg=dict(type='GN', num_group=32, requires_grad=True),)
