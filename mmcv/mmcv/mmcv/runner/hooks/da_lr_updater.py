@@ -215,7 +215,7 @@ class DAGanLrUpdaterHook(DALrUpdaterHook):
             return [self.get_lr(runner, _base_lr) for _base_lr in self.base_lr]
 
     def before_train_epoch(self, runner):
-        if (self.count+1) % self.strategy == 0:
+        if (self.count) % self.strategy == 0:
             self.flag = 1
         else:
             self.flag = 0

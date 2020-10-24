@@ -49,8 +49,12 @@ class DATwoStageDetector(DABaseDetector):
         
         if feat_dis_head is not None:
             self.feat_dis_head = build_discriminator(feat_dis_head)
+        else:
+            self.feat_dis_head = None
         if ins_dis_head is not None:
             self.ins_dis_head = build_discriminator(ins_dis_head)
+        else:
+            self.ins_dis_head = None
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
 
@@ -166,11 +170,14 @@ class DATwoStageDetector(DABaseDetector):
 
         x_t = self.extract_feat(img_t, domain_t)
         x_s = self.extract_feat(img_s, domain_s)
-
-        loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
-        loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
         losses = dict()
 
+        if self.feat_dis_head is not None:
+            loss_feat_s = self.feat_dis_head.forward_train(x_s, domain_s)
+            loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
+            losses.update({'loss_feat_s':loss_feat_s['loss_feat']})
+            losses.update({'loss_feat_t':loss_feat_t['loss_feat']})
+  
         # RPN forward and loss
         if self.with_rpn:
             proposal_cfg = self.train_cfg.get('rpn_proposal',
@@ -192,19 +199,18 @@ class DATwoStageDetector(DABaseDetector):
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
                                                               **kwargs)
-        bbox_feat_s = bbox_feat_s.view(-1, 256*7*7)
-        _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list_t,
-                                                     gt_bboxes_t, gt_labels_t,
-                                                     gt_bboxes_ignore, gt_masks,
-                                                     **kwargs)
-        bbox_feat_t = bbox_feat_t.view(-1, 256*7*7)
-        loss_ins_s = self.ins_dis_head.forward_train(bbox_feat_s, domain_s)
-        loss_ins_t = self.ins_dis_head.forward_train(bbox_feat_t, domain_t)
+        if self.ins_dis_head is not None:
+            bbox_feat_s = bbox_feat_s.view(-1, 256*7*7)
+            _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list_t,
+                                                         gt_bboxes_t, gt_labels_t,
+                                                         gt_bboxes_ignore, gt_masks,
+                                                         **kwargs)
+            bbox_feat_t = bbox_feat_t.view(-1, 256*7*7)
+            loss_ins_s = self.ins_dis_head.forward_train(bbox_feat_s, domain_s)
+            loss_ins_t = self.ins_dis_head.forward_train(bbox_feat_t, domain_t)
+            losses.update({'loss_ins_s': loss_ins_s['loss_ins']})
+            losses.update({'loss_ins_t': loss_ins_t['loss_ins']})
         losses.update(roi_losses)
-        losses.update(loss_feat_s)
-        losses.update(loss_feat_t)
-        losses.update({'loss_ins_s': loss_ins_s['loss_ins']})
-        losses.update({'loss_ins_t': loss_ins_t['loss_ins']})
         return losses
 
     async def async_simple_test(self,

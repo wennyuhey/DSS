@@ -226,7 +226,8 @@ def da_train_detector(model,
         meta=meta)
     # an ugly workaround to make .log and .log.json filenames the same
     runner.timestamp = timestamp
-    
+    #if 'Aux' in cfg.model.backbone.type:
+    #    runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
     # fp16 setting
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:

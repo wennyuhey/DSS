@@ -6,7 +6,7 @@ _base_ = [
 model = dict(
     pretrained=None,
     backbone=dict(
-        type='ResNet',
+        type='AuxResNet',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -34,9 +34,10 @@ model = dict(
      feat_dis_head=dict(
         type='DAFeatDiscriminator',
         in_channels=256),
-     ins_dis_head=dict(
-        type='DAInsDiscriminator',
-        in_channels=256*7*7))
+     ins_dis_head=None)
+     #ins_dis_head=dict(
+    #     type='DAInsDiscriminator',
+    #    in_channels=256*7*7))
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(
@@ -59,7 +60,7 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[25])
+    step=[35])
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
