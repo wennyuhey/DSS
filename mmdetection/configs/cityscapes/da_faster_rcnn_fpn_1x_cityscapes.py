@@ -34,10 +34,10 @@ model = dict(
      feat_dis_head=dict(
         type='DAFeatDiscriminator',
         in_channels=256),
-     ins_dis_head=None)
-     #ins_dis_head=dict(
-    #     type='DAInsDiscriminator',
-    #    in_channels=256*7*7))
+     #ins_dis_head=None)
+     ins_dis_head=dict(
+         type='DAInsDiscriminator',
+        in_channels=256*7*7))
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(
