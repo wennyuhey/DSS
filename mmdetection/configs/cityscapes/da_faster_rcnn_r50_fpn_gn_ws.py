@@ -1,8 +1,8 @@
-_base_ = '../faster_rcnn/faster_rcnn_r50_fpn_1x_cityscapes.py'
+_base_ = './da_faster_rcnn_fpn_1x_cityscapes.py'
 conv_cfg = dict(type='ConvWS')
 norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
 model = dict(
-    pretrained='open-mmlab://jhu/resnet50_gn_ws',
+    pretrained=None,
     backbone=dict(conv_cfg=conv_cfg, norm_cfg=norm_cfg),
     neck=dict(conv_cfg=conv_cfg, norm_cfg=norm_cfg),
     roi_head=dict(

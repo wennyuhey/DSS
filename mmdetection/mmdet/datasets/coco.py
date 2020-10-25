@@ -227,10 +227,21 @@ class CocoDataset(CustomDataset):
         for idx in range(len(self)):
             img_id = self.img_ids[idx]
             result = results[idx]
-            citylabel = [0, 1, 2, 3, 4, 5, 6, 7]
-            #citydict = {0: 24, 2: 26, 7: 27, 5: 28, 6: 31, 3: 32, 1: 33}
-            for label in range(len(result)):
-                if label in citylabel:
+            citylabel = [0, 1, 2, 3, 5, 6, 7]
+            citydict = {0: 24, 2: 26, 7: 27, 5: 28, 6: 31, 3: 32, 1: 33}
+            if len(result) == 80:
+                for label in range(len(result)):
+                    if label in citylabel:
+                        bboxes = result[label]
+                        for i in range(bboxes.shape[0]):
+                            data = dict()
+                            data['image_id'] = img_id
+                            data['bbox'] = self.xyxy2xywh(bboxes[i])
+                            data['score'] = float(bboxes[i][4])
+                            data['category_id'] = citydict[label]
+                            json_results.append(data)
+            elif len(result) == 8:
+                for label in range(len(result)):
                     bboxes = result[label]
                     for i in range(bboxes.shape[0]):
                         data = dict()
@@ -238,8 +249,8 @@ class CocoDataset(CustomDataset):
                         data['bbox'] = self.xyxy2xywh(bboxes[i])
                         data['score'] = float(bboxes[i][4])
                         data['category_id'] = self.cat_ids[label]
-      #              data['category_id'] = citydict[label]
                         json_results.append(data)
+
         return json_results
 
     def _segm2json(self, results):

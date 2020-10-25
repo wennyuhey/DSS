@@ -7,7 +7,7 @@ from .test_mixins import BBoxTestMixin, MaskTestMixin
 
 
 @HEADS.register_module()
-class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
+class DAStandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
     """Simplest base roi head including one bbox head and one mask head."""
 
     def init_assigner_sampler(self):
@@ -130,7 +130,7 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
             if mask_results['loss_mask'] is not None:
                 losses.update(mask_results['loss_mask'])
 
-        return losses
+        return losses, bbox_results['bbox_feats']
 
     def _bbox_forward(self, x, rois):
         """Box head forward function used in both training and testing."""
