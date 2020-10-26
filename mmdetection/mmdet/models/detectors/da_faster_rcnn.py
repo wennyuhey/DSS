@@ -12,6 +12,7 @@ class DAFasterRCNN(DATwoStageDetector):
                  roi_head,
                  feat_dis_head,
                  ins_dis_head,
+                 domain_mask,
                  train_cfg,
                  test_cfg,
                  neck=None,
@@ -23,6 +24,7 @@ class DAFasterRCNN(DATwoStageDetector):
             roi_head=roi_head,
             feat_dis_head=feat_dis_head,
             ins_dis_head=ins_dis_head,
+            domain_mask=domain_mask,
             train_cfg=train_cfg,
             test_cfg=test_cfg,
             pretrained=pretrained)

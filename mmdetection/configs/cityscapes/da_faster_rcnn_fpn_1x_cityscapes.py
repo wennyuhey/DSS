@@ -11,14 +11,19 @@ model = dict(
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(
-            type='GN',
-            num_groups=32,
-            requires_grad=True),
-        #norm_cfg=dict(type='BN', requires_grad=True),
+        #norm_cfg=dict(
+        #    type='GN',
+        #    num_groups=32,
+        #    requires_grad=True),
+        norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
         style='pytorch'),
     #neck=dict(norm_cfg=dict(type='GN', num_group=32, requires_grad=True),)
+    #domain_mask=dict(
+    #    type='DAChannelMask',
+    #    in_channels=256,
+    #    att_dim=128),
+    domain_mask=None,
     roi_head=dict(
         bbox_head=dict(
             type='Shared2FCBBoxHead',
@@ -35,9 +40,10 @@ model = dict(
             loss_cls=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
-     feat_dis_head=dict(
-        type='DAFeatDiscriminator',
-        in_channels=256),
+#     feat_dis_head=dict(
+#        type='DAFeatDiscriminator',
+#        in_channels=256),
+     feat_dis_head=None,
      ins_dis_head=None)
      #ins_dis_head=dict(
      #    type='DAInsDiscriminator',

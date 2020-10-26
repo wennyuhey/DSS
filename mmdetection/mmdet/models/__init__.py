@@ -9,9 +9,12 @@ from .losses import *  # noqa: F401,F403
 from .necks import *  # noqa: F401,F403
 from .roi_heads import *  # noqa: F401,F403
 from .discriminators import *
+from .domain_mask import *
+
 
 __all__ = [
-    'BACKBONES', 'NECKS', 'ROI_EXTRACTORS', 'SHARED_HEADS', 'HEADS', 'LOSSES',
+    'BACKBONES', 'NECKS', 'ROI_EXTRACTORS', 'SHARED_HEADS', 'HEADS', 'LOSSES', 'DOMAINMASK'
     'DETECTORS', 'DISCRIMINATORS', 'build_backbone', 'build_neck', 'build_roi_extractor',
-    'build_shared_head', 'build_head', 'build_loss', 'build_detector', 'build_discriminator'
+    'build_shared_head', 'build_head', 'build_loss', 'build_detector', 'build_discriminator',
+    'build_domainmask'
 ]

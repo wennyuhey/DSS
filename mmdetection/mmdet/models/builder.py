@@ -9,6 +9,7 @@ HEADS = Registry('head')
 LOSSES = Registry('loss')
 DETECTORS = Registry('detector')
 DISCRIMINATORS = Registry('discriminator')
+DOMAINMASKS = Registry('domain_mask')
 
 def build(cfg, registry, default_args=None):
     """Build a module.
@@ -69,3 +70,7 @@ def build_detector(cfg, train_cfg=None, test_cfg=None):
 def build_discriminator(cfg):
     """Build discriminator"""
     return build(cfg, DISCRIMINATORS)
+
+def build_domainmask(cfg):
+    """Build Domain Mask"""
+    return build(cfg, DOMAINMASKS)

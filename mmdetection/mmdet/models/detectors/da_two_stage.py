@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 # from mmdet.core import bbox2result, bbox2roi, build_assigner, build_sampler
-from ..builder import DETECTORS, build_backbone, build_head, build_neck, build_discriminator
+from ..builder import DETECTORS, build_backbone, build_head, build_neck, build_discriminator, build_domainmask
 from .da_base import DABaseDetector
 from mmdet.utils import convert_splitbn_model 
 
@@ -21,6 +21,7 @@ class DATwoStageDetector(DABaseDetector):
                  roi_head=None,
                  feat_dis_head=None,
                  ins_dis_head=None,
+                 domain_mask=None,
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None):
@@ -55,6 +56,10 @@ class DATwoStageDetector(DABaseDetector):
             self.ins_dis_head = build_discriminator(ins_dis_head)
         else:
             self.ins_dis_head = None
+        if domain_mask is not None:
+            self.mask_head = build_domainmask(domain_mask)
+        else:
+            self.mask_head = None
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
 
@@ -170,6 +175,8 @@ class DATwoStageDetector(DABaseDetector):
 
         x_t = self.extract_feat(img_t, domain_t)
         x_s = self.extract_feat(img_s, domain_s)
+
+
         losses = dict()
 
         if self.feat_dis_head is not None:
@@ -177,13 +184,16 @@ class DATwoStageDetector(DABaseDetector):
             loss_feat_t = self.feat_dis_head.forward_train(x_t, domain_t)
             losses.update({'loss_feat_s':loss_feat_s['loss_feat']})
             losses.update({'loss_feat_t':loss_feat_t['loss_feat']})
-  
-        # RPN forward and loss
-        if self.with_rpn:
+        if self.mask_head is not None:
+            mask = self.mask_head(x_s, x_t)[0]
+            x_mask = []
+            for i, (x, mask_s) in enumerate(zip(x_s, mask)):
+                x_mask.append(x * mask_s)
+            x_mask = tuple(x_mask)
             proposal_cfg = self.train_cfg.get('rpn_proposal',
                                               self.test_cfg.rpn)
-            rpn_losses, proposal_list_s, proposal_list_t = self.rpn_head.forward_train(
-                x_s,
+            rpn_losses, proposal_list, proposal_list_t = self.rpn_head.forward_train(
+                x_mask,
                 img_metas_s,
                 x_t,
                 img_metas_t,
@@ -191,11 +201,36 @@ class DATwoStageDetector(DABaseDetector):
                 gt_labels_s=None,
                 gt_bboxes_ignore=gt_bboxes_ignore,
                 proposal_cfg=proposal_cfg)
-            losses.update(rpn_losses)
-        else:
-            proposal_list = proposals
+            losses.update({'mask_cls_loss':rpn_losses['loss_rpn_cls']})
+            losses.update({'mask_bbox_loss':rpn_losses['loss_rpn_bbox']})
+            roi_losses, _ = self.roi_head.forward_train(x_mask, img_metas_s, proposal_list,
+                                                              gt_bboxes_s, gt_labels_s,
+                                                              gt_bboxes_ignore, gt_masks,
+                                                              **kwargs)
+       
+            losses.update({'mask_loss_cls':roi_losses['loss_cls']})
+            losses.update({'mask_loss_bbox':roi_losses['loss_bbox']})
 
-        roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list_s,
+
+        else:
+        #     RPN forward and loss
+            if self.with_rpn:
+                proposal_cfg = self.train_cfg.get('rpn_proposal',
+                                                  self.test_cfg.rpn)
+                rpn_losses, proposal_list_s, proposal_list_t = self.rpn_head.forward_train(
+                    x_s,
+                    img_metas_s,
+                    x_t,
+                    img_metas_t,
+                    gt_bboxes_s,
+                    gt_labels_s=None,
+                    gt_bboxes_ignore=gt_bboxes_ignore,
+                    proposal_cfg=proposal_cfg)
+                losses.update(rpn_losses)
+            else:
+                proposal_list = proposals
+
+            roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list_s,
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
                                                               **kwargs)
