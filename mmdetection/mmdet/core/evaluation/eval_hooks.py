@@ -47,6 +47,9 @@ class EvalHook(Hook):
         if self.start is not None and runner.epoch >= self.start:
             self.after_train_epoch(runner)
         self.initial_epoch_flag = False
+        from mmdet.apis import single_gpu_test
+        results = single_gpu_test(runner.model, self.dataloader, show=False)
+        self.evaluate(runner, results)
 
     def evaluation_flag(self, runner):
         """Judge whether to perform_evaluation after this epoch.

@@ -205,7 +205,7 @@ class ClassBalancedDataset(object):
             Default: True.
     """
 
-    def __init__(self, dataset, oversample_thr, filter_empty_gt=True):
+    def __init__(self, dataset, oversample_thr, filter_empty_gt=False):
         self.dataset = dataset
         self.oversample_thr = oversample_thr
         self.filter_empty_gt = filter_empty_gt
