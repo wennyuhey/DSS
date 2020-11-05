@@ -14,7 +14,6 @@ from .utils import get_host_info
 
 import numpy as np
 import math
-import pdb
 
 
 class DAEpochBasedRunner(DABaseRunner):
@@ -29,13 +28,13 @@ class DAEpochBasedRunner(DABaseRunner):
         self.data_loader_t = data_loader_t
         self.data_loader_s = data_loader_s
         self._max_iter_per_epoch = max(len(self.data_loader_s), len(self.data_loader_t))
+        #self._max_iter_per_epoch = 100
         self._max_iters = self._max_epochs * self._max_iter_per_epoch
         self.call_hook('before_train_epoch')
         
          
         self.iter_s = iter(self.data_loader_s)
         self.iter_t = iter(self.data_loader_t)
-
         time.sleep(2)  # Prevent possible deadlock during epoch transition
         for i in range(self._max_iter_per_epoch):
             self._inner_iter = i

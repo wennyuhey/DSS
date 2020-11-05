@@ -1,6 +1,7 @@
 _base_ = '../faster_rcnn/faster_rcnn_r50_fpn_1x_cityscapes.py'
-conv_cfg = dict(type='ConvWS')
-norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+conv_cfg = dict(type='ConvWM')
+#norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+norm_cfg = dict(type='BN', requires_grad=True)
 model = dict(
     pretrained='open-mmlab://jhu/resnet50_gn_ws',
     backbone=dict(conv_cfg=conv_cfg, norm_cfg=norm_cfg),
@@ -11,3 +12,4 @@ model = dict(
             conv_out_channels=256,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg)))
+load_from = '/lustre/S/wangyu/PretrainedModels/fasterrcnn_r50_fpn_gn_ws_cityscapes.pth'

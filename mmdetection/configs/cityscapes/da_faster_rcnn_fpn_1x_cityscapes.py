@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/da_faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/da_cityscapes_gta_detection.py',
+    '../_base_/datasets/da_cityscapes_detection.py',
     '../_base_/da_default_runtime.py'
 ]
 model = dict(
@@ -11,14 +11,9 @@ model = dict(
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        #norm_cfg=dict(
-        #    type='GN',
-        #    num_groups=32,
-        #    requires_grad=True),
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
         style='pytorch'),
-    #neck=dict(norm_cfg=dict(type='GN', num_group=32, requires_grad=True),)
     #domain_mask=dict(
     #    type='DAChannelMask',
     #    in_channels=256,
@@ -31,7 +26,6 @@ model = dict(
             fc_out_channels=1024,
             roi_feat_size=7,
             num_classes=8,
-     #       norm_cfg=dict(type='GN', num_group=32, requires_grad=True),
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0., 0., 0., 0.],
@@ -40,14 +34,14 @@ model = dict(
             loss_cls=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
-#     feat_dis_head=dict(
-#        type='DAFeatDiscriminator',
-#        in_channels=256),
-     feat_dis_head=None,
+     feat_dis_head=dict(
+        type='DAFeatDiscriminator',
+        in_channels=256),
+#     feat_dis_head=None,
      ins_dis_head=None)
-     #ins_dis_head=dict(
-     #    type='DAInsDiscriminator',
-     #   in_channels=256*7*7))
+#     ins_dis_head=dict(
+#         type='DAInsDiscriminator',
+#         in_channels=256*7*7))
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(
@@ -74,3 +68,6 @@ lr_config = dict(
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_cityscapes_20200502-829424c0.pth'
+#load_from = '/lustre/S/wangyu/PretrainedModels/fasterrcnn_r50_fpn_gn_ws_cityscapes.pth'
+#load_from = '/lustre/S/wangyu/aux_normon_ins_step_done/epoch_23.pth'

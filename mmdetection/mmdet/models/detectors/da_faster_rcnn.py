@@ -10,11 +10,11 @@ class DAFasterRCNN(DATwoStageDetector):
                  backbone,
                  rpn_head,
                  roi_head,
-                 feat_dis_head,
-                 ins_dis_head,
-                 domain_mask,
                  train_cfg,
                  test_cfg,
+                 feat_dis_head=None,
+                 ins_dis_head=None,
+                 domain_mask=None,
                  neck=None,
                  pretrained=None):
         super(DAFasterRCNN, self).__init__(

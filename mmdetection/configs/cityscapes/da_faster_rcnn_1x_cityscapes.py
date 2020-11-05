@@ -18,7 +18,7 @@ model = dict(
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=False,
         style='pytorch'),
-    #neck=dict(norm_cfg=dict(type='GN', num_group=32, requires_grad=True),)
+    neck=None,
     #domain_mask=dict(
     #    type='DAChannelMask',
     #    in_channels=256,
@@ -40,10 +40,10 @@ model = dict(
             loss_cls=dict(
                 type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
-#     feat_dis_head=dict(
-#        type='DAFeatDiscriminator',
-#        in_channels=256),
-     feat_dis_head=None,
+     feat_dis_head=dict(
+        type='DAFeatDiscriminator',
+        in_channels=256),
+#     feat_dis_head=None,
      ins_dis_head=None)
      #ins_dis_head=dict(
      #    type='DAInsDiscriminator',
@@ -70,7 +70,8 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[35])
+    step=[37])
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
+load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_c4_1x-642cf91f.pth'

@@ -75,7 +75,7 @@ class TwoStageDetector(BaseDetector):
         if self.with_rpn:
             self.rpn_head.init_weights()
         if self.with_roi_head:
-            self.roi_head.init_weights(pretrained)
+            self.roi_head.init_weights(pretrained=None)
 
     def extract_feat(self, img):
         """Directly extract features from the backbone+neck."""

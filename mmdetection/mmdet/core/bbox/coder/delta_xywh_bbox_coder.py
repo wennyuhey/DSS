@@ -90,18 +90,18 @@ def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
             dw, dh.
     """
     assert proposals.size() == gt.size()
-
+    eps=1e-5
     proposals = proposals.float()
     gt = gt.float()
     px = (proposals[..., 0] + proposals[..., 2]) * 0.5
     py = (proposals[..., 1] + proposals[..., 3]) * 0.5
-    pw = proposals[..., 2] - proposals[..., 0]
-    ph = proposals[..., 3] - proposals[..., 1]
+    pw = proposals[..., 2] - proposals[..., 0] + eps
+    ph = proposals[..., 3] - proposals[..., 1] + eps
 
     gx = (gt[..., 0] + gt[..., 2]) * 0.5
     gy = (gt[..., 1] + gt[..., 3]) * 0.5
-    gw = gt[..., 2] - gt[..., 0]
-    gh = gt[..., 3] - gt[..., 1]
+    gw = gt[..., 2] - gt[..., 0] + eps
+    gh = gt[..., 3] - gt[..., 1] + eps
 
     dx = (gx - px) / pw
     dy = (gy - py) / ph

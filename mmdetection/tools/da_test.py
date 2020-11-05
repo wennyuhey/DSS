@@ -163,14 +163,14 @@ def main():
     # build the model and load checkpoint
     model = build_detector(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
     fp16_cfg = cfg.get('fp16', None)
-    if 'Aux' in cfg.model.backbone.type:
-        model.backbone = convert_splitbn_model(model.backbone)
+    #if 'Aux' in cfg.model.backbone.type:
+    #    model.backbone = convert_splitbn_model(model.backbone)
 
     if fp16_cfg is not None:
         wrap_fp16_model(model)
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
-    #if 'Aux' in cfg.model.backbone.type:
-    #    model.backbone = convert_splitbn_model(model.backbone)
+    if 'Aux' in cfg.model.backbone.type:
+        model.backbone = convert_splitbn_model(model.backbone)
 
     if args.fuse_conv_bn:
         model = fuse_conv_bn(model)
@@ -183,7 +183,7 @@ def main():
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
         import pickle
-#        outputs = pickle.load(open('result.pkl', 'rb'))
+#        outputs = pickle.load(open('bbk.pkl', 'rb'))
         outputs = da_single_gpu_test(model, data_loader, args.show, args.show_dir,
                                      args.show_score_thr)
     else:

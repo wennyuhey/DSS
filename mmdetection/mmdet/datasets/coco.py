@@ -240,7 +240,7 @@ class CocoDataset(CustomDataset):
                             data['score'] = float(bboxes[i][4])
                             data['category_id'] = citydict[label]
                             json_results.append(data)
-            elif len(result) == 8:
+            else:
                 for label in range(len(result)):
                     bboxes = result[label]
                     for i in range(bboxes.shape[0]):
@@ -250,6 +250,7 @@ class CocoDataset(CustomDataset):
                         data['score'] = float(bboxes[i][4])
                         data['category_id'] = self.cat_ids[label]
                         json_results.append(data)
+                
 
         return json_results
 
@@ -433,7 +434,6 @@ class CocoDataset(CustomDataset):
         if metric_items is not None:
             if not isinstance(metric_items, list):
                 metric_items = [metric_items]
-
         result_files, tmp_dir = self.format_results(results, jsonfile_prefix)
 
         eval_results = {}

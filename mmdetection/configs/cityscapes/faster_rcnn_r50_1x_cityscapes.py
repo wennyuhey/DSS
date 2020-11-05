@@ -1,14 +1,13 @@
 _base_ = [
-    '../_base_/models/faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/cityscapes_voc_detection.py',
+    '../_base_/models/faster_rcnn_r50_caffe_c4.py',
+    '../_base_/datasets/foggy_cityscapes_detection.py',
     '../_base_/default_runtime.py'
 ]
 model = dict(
-    pretrained=None,
     roi_head=dict(
         bbox_head=dict(
             type='Shared2FCBBoxHead',
-            in_channels=256,
+            in_channels=2048,
             fc_out_channels=1024,
             roi_feat_size=7,
             num_classes=8,
@@ -35,4 +34,4 @@ lr_config = dict(
 total_epochs = 16  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_caffe_c4_1x-75ecfdfa_new.pth'
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_caffe_c4_1x-75ecfdfa_new.pth'

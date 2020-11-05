@@ -1,13 +1,13 @@
 _base_ = [
     '../_base_/models/da_faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/da_coco_detection.py',
+    '../_base_/datasets/da_kitti_cityscapes_detection.py',
     '../_base_/da_default_runtime.py'
 ]
 conv_cfg = dict(type='ConvWS')
 norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
 
 model = dict(
-    pretrained=None,
+    pretrained='open-mmlab://jhu/resnet50_gn_ws',
     backbone=dict(
         type='AuxResNet',
         depth=50,
@@ -22,13 +22,15 @@ model = dict(
     roi_head=dict(
         bbox_head=dict(
         type='Shared4Conv1FCBBoxHead',
+            num_classes=1,
             conv_out_channels=256,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg)),
     feat_dis_head=dict(
         type='DAFeatDiscriminator',
         in_channels=256),
-     ins_dis_head=None)
+    ins_dis_head=None,
+    domain_mask=None)
      #ins_dis_head=dict(
      #    type='DAInsDiscriminator',
      #   in_channels=256*7*7))
@@ -58,4 +60,4 @@ lr_config = dict(
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
-load_from='/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'
+load_from='/lustre/S/wangyu/kitti_model/fpn/epoch_7.pth'

@@ -174,6 +174,7 @@ class DATwoStageDetector(DABaseDetector):
         gt_labels_t = data_t['gt_labels']
 
         x_t = self.extract_feat(img_t, domain_t)
+
         x_s = self.extract_feat(img_s, domain_s)
 
 
@@ -234,6 +235,15 @@ class DATwoStageDetector(DABaseDetector):
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
                                                               **kwargs)
+            import math
+            if math.isnan(roi_losses['loss_bbox']):
+                import pdb
+                pdb.set_trace()
+                roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list_s,
+                                                              gt_bboxes_s, gt_labels_s,
+                                                              gt_bboxes_ignore, gt_masks,
+                                                              **kwargs)
+
         if self.ins_dis_head is not None:
             bbox_feat_s = bbox_feat_s.view(-1, 256*7*7)
             _, bbox_feat_t = self.roi_head.forward_train(x_t, img_metas_t, proposal_list_t,
