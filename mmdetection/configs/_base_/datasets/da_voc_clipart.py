@@ -1,8 +1,8 @@
 # dataset settings
 dataset_type = 'VOCDataset'
 data_root = 'data/'
-classes = ('areo', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 
-           'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 
+classes = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
+           'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
            'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
@@ -66,20 +66,23 @@ data_t = dict(
         classes=classes,
         dataset=dict(
             type=dataset_type,
-            ann_file=
+            ann_file=[
                 data_root + 'clipart/VOC2012/ImageSets/Main/train.txt',
+                data_root + 'clipart/VOC2012/ImageSets/Main/test.txt'],
             img_prefix=data_root + 'clipart/VOC2012/',
             pipeline=train_pipeline)),
     val=dict(
         type=dataset_type,
         classes=classes,
-        ann_file=data_root + 'clipart/VOC2012/ImageSets/Main/test.txt',
+        ann_file=[
+            data_root + 'clipart/VOC2012/ImageSets/Main/train.txt',
+            data_root + 'clipart/VOC2012/ImageSets/Main/test.txt'],
         img_prefix=data_root + 'clipart/VOC2012/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         classes=classes,
-        ann_file=data_root + 'clipart/VOC2012/ImageSets/Main/test.txt',
+        ann_file=data_root + 'clipart/VOC2012/ImageSets/Main/train.txt',
         img_prefix=data_root + 'clipart/VOC2012/',
         pipeline=test_pipeline))
 

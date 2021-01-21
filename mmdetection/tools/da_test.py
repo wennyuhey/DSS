@@ -152,7 +152,7 @@ def main():
     if samples_per_gpu > 1:
         # Replace 'ImageToTensor' to 'DefaultFormatBundle'
         cfg.data_t.val.pipeline = replace_ImageToTensor(cfg.data_t.val.pipeline)
-    dataset_t = build_dataset(cfg.data_t.train)
+    dataset_t = build_dataset(cfg.data_t.val)
     dataset_s = build_dataset(cfg.data_s.val)
     data_loader_t = build_dataloader(
         dataset_t,
@@ -191,8 +191,8 @@ def main():
         model = MMDataParallel(model, device_ids=[0])
         import pickle
 #        outputs = pickle.load(open('bbk.pkl', 'rb'))
-        outputs_s = da_single_gpu_test(model, data_loader_s, args.show, args.show_dir,
-                                     args.show_score_thr)
+    #    outputs_s = da_single_gpu_test(model, data_loader_s, args.show, args.show_dir,
+    #                                 args.show_score_thr)
         outputs_t = da_single_gpu_test(model, data_loader_t, args.show, args.show_dir,
                                      args.show_score_thr)
     else:
@@ -218,7 +218,7 @@ def main():
             for key in ['interval', 'tmpdir', 'start', 'gpu_collect']:
                 eval_kwargs.pop(key, None)
             eval_kwargs.update(dict(metric=args.eval, **kwargs))
-            print(dataset_s.evaluate(outputs_s, **eval_kwargs))
+     #       print(dataset_s.evaluate(outputs_s, **eval_kwargs))
             print(dataset_t.evaluate(outputs_t, **eval_kwargs))
 
 
