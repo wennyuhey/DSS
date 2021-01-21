@@ -148,12 +148,12 @@ def main():
 
     # build the dataloader
 
-    samples_per_gpu = cfg.data_t.train.pop('samples_per_gpu', 1)
+    samples_per_gpu = cfg.data_t.val.pop('samples_per_gpu', 1)
     if samples_per_gpu > 1:
         # Replace 'ImageToTensor' to 'DefaultFormatBundle'
         cfg.data_t.val.pipeline = replace_ImageToTensor(cfg.data_t.val.pipeline)
-    dataset_t = build_dataset(cfg.data_t.val)
-    dataset_s = build_dataset(cfg.data_s.train)
+    dataset_t = build_dataset(cfg.data_t.train)
+    dataset_s = build_dataset(cfg.data_s.val)
     data_loader_t = build_dataloader(
         dataset_t,
         samples_per_gpu=samples_per_gpu,

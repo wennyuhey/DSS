@@ -145,7 +145,7 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
             # proposals.
             if 'proposals' in kwargs:
                 kwargs['proposals'] = kwargs['proposals']
-            return self.simple_test(imgs, img_metas, domain, **kwargs)
+            return self.simple_test(imgs[0], img_metas[0], domain, **kwargs)
         else:
             assert imgs[0].size(0) == 1, 'aug test does not support ' \
                                          'inference with batch size ' \
