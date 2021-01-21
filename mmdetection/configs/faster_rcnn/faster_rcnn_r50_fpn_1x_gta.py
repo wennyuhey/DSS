@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/GTA_detection.py',
+    '../_base_/datasets/gta_voc_detection.py',
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 classes = ('car', )
@@ -13,3 +13,4 @@ model = dict(
         bbox_head=dict(
             num_classes=1)))
 
+load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth'

@@ -237,8 +237,6 @@ class DATwoStageDetector(DABaseDetector):
                                                               **kwargs)
             import math
             if math.isnan(roi_losses['loss_bbox']):
-                import pdb
-                pdb.set_trace()
                 roi_losses, bbox_feat_s = self.roi_head.forward_train(x_s, img_metas_s, proposal_list_s,
                                                               gt_bboxes_s, gt_labels_s,
                                                               gt_bboxes_ignore, gt_masks,
@@ -281,6 +279,9 @@ class DATwoStageDetector(DABaseDetector):
         assert self.with_bbox, 'Bbox head must be implemented.'
 
         x = self.extract_feat(img, domain)
+        #import numpy as np
+        #import os
+        #np.save(os.path.splitext(os.path.split(img_metas[0]['ori_filename'])[1])[0]+'.npy', x[0].detach().cpu())
         if proposals is None:
             proposal_list = self.rpn_head.simple_test_rpn(x, img_metas)
         else:

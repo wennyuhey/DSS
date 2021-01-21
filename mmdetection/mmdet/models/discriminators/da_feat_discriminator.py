@@ -78,7 +78,7 @@ class DAFeatDiscriminator(DABaseDiscriminator):
 
     def loss_single(self, feat_dis_scores, gt_domain):
         # feature domain classification loss
-        feat_loss = self.mse(torch.mean(feat_dis_scores), gt_domain[0].float())
+        feat_loss = 10*self.mse(torch.mean(feat_dis_scores), gt_domain[0].float())
         return feat_loss, torch.tensor([0])
 
     def loss(self,

@@ -24,10 +24,14 @@ class EpochBasedRunner(BaseRunner):
         self.model.train()
         self.mode = 'train'
         self.data_loader = data_loader
-        self._max_iters = self._max_epochs * len(self.data_loader)
+        #self._max_iters = self._max_epochs * len(self.data_loader)
+        self._max_iters = 100
         self.call_hook('before_train_epoch')
         time.sleep(2)  # Prevent possible deadlock during epoch transition
-        for i, data_batch in enumerate(self.data_loader):
+        #for i, data_batch in enumerate(self.data_loader):
+        self.iters = iter(self.data_loader)
+        for i in range(self._max_iters):
+            data_batch = self.iters.__next__()
             self._inner_iter = i
             self.call_hook('before_train_iter')
             if self.batch_processor is None:

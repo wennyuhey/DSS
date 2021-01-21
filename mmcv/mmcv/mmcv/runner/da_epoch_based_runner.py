@@ -32,7 +32,6 @@ class DAEpochBasedRunner(DABaseRunner):
         self._max_iters = self._max_epochs * self._max_iter_per_epoch
         self.call_hook('before_train_epoch')
         
-         
         self.iter_s = iter(self.data_loader_s)
         self.iter_t = iter(self.data_loader_t)
         time.sleep(2)  # Prevent possible deadlock during epoch transition

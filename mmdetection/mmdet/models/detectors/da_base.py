@@ -128,15 +128,15 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
                 augs (multiscale, flip, etc.) and the inner list indicates
                 images in a batch.
         """
+        """
         for var, name in [(imgs, 'imgs'), (img_metas, 'img_metas')]:
             if not isinstance(var, list):
                 raise TypeError(f'{name} must be a list, but got {type(var)}')
-
+        """
         num_augs = len(imgs)
         if num_augs != len(img_metas):
             raise ValueError(f'num of augmentations ({len(imgs)}) '
                              f'!= num of image meta ({len(img_metas)})')
-
         if num_augs == 1:
             # proposals (List[List[Tensor]]): the outer list indicates
             # test-time augs (multiscale, flip, etc.) and the inner list
@@ -144,8 +144,8 @@ class DABaseDetector(nn.Module, metaclass=ABCMeta):
             # The Tensor should have a shape Px4, where P is the number of
             # proposals.
             if 'proposals' in kwargs:
-                kwargs['proposals'] = kwargs['proposals'][0]
-            return self.simple_test(imgs[0], img_metas[0], domain, **kwargs)
+                kwargs['proposals'] = kwargs['proposals']
+            return self.simple_test(imgs, img_metas, domain, **kwargs)
         else:
             assert imgs[0].size(0) == 1, 'aug test does not support ' \
                                          'inference with batch size ' \

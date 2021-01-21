@@ -148,8 +148,10 @@ def main():
     meta['seed'] = args.seed
     model = build_detector(
         cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+    #count = 0
     #for k, v in model.named_parameters():
-    #    print("{} {}\n".format(k, v.size()))
+    #    print("{}: {} {}\n".format(count,k, v.size()))
+    #    count+= 1
     dataset_s = [build_dataset(cfg.data_s.train)]
     dataset_t = [build_dataset(cfg.data_t.train)]
 

@@ -6,7 +6,7 @@ _base_ = [
 #norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
 norm_cfg = dict(type='BN', requires_grad=True)
 model = dict(
-    pretrained=None,
+    pretrained='open-mmlab://detectron/resnet50_gn',
     backbone=dict(norm_cfg=norm_cfg),
     neck=dict(norm_cfg=norm_cfg),
     roi_head=dict(
@@ -27,7 +27,7 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[7])
+    step=[8])
 total_epochs = 20  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO

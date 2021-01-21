@@ -256,7 +256,6 @@ class DAStandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
                         self.bbox_head.num_classes)
             for i in range(len(det_bboxes))
         ]
-
         if not self.with_mask:
             return bbox_results
         else:

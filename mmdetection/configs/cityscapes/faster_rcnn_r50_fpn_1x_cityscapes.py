@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/cityscapes_voc_detection.py',
+    '../_base_/datasets/cityscapes_detection.py',
     '../_base_/default_runtime.py'
 ]
 model = dict(
@@ -35,4 +35,5 @@ lr_config = dict(
 total_epochs = 16  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_caffe_c4_1x-75ecfdfa_new.pth'
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_caffe_c4_1x-75ecfdfa_new.pth'
+load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth'

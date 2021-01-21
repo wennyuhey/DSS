@@ -270,6 +270,8 @@ class DADistEvalHook(DAEvalHook):
         if runner.rank == 0:
             print('\n')
             self.evaluate(runner, results)
+    def after_iter(self, runner):
+        self.after_train_epoch(runner)
     """
     def before_train_epoch(self, runner):
         if not self.evaluation_flag(runner):

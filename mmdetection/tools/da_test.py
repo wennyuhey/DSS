@@ -148,13 +148,20 @@ def main():
 
     # build the dataloader
 
-    samples_per_gpu = cfg.data_t.val.pop('samples_per_gpu', 1)
+    samples_per_gpu = cfg.data_t.train.pop('samples_per_gpu', 1)
     if samples_per_gpu > 1:
         # Replace 'ImageToTensor' to 'DefaultFormatBundle'
         cfg.data_t.val.pipeline = replace_ImageToTensor(cfg.data_t.val.pipeline)
-    dataset = build_dataset(cfg.data_t.val)
-    data_loader = build_dataloader(
-        dataset,
+    dataset_t = build_dataset(cfg.data_t.val)
+    dataset_s = build_dataset(cfg.data_s.train)
+    data_loader_t = build_dataloader(
+        dataset_t,
+        samples_per_gpu=samples_per_gpu,
+        workers_per_gpu=cfg.data_s.workers_per_gpu,
+        dist=distributed,
+        shuffle=False)
+    data_loader_s = build_dataloader(
+        dataset_s,
         samples_per_gpu=samples_per_gpu,
         workers_per_gpu=cfg.data_s.workers_per_gpu,
         dist=distributed,
@@ -163,14 +170,14 @@ def main():
     # build the model and load checkpoint
     model = build_detector(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
     fp16_cfg = cfg.get('fp16', None)
-    #if 'Aux' in cfg.model.backbone.type:
-    #    model.backbone = convert_splitbn_model(model.backbone)
+    if 'Aux' in cfg.model.backbone.type:
+        model.backbone = convert_splitbn_model(model.backbone)
 
     if fp16_cfg is not None:
         wrap_fp16_model(model)
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
-    if 'Aux' in cfg.model.backbone.type:
-        model.backbone = convert_splitbn_model(model.backbone)
+    #if 'Aux' in cfg.model.backbone.type:
+    #    model.backbone = convert_splitbn_model(model.backbone)
 
     if args.fuse_conv_bn:
         model = fuse_conv_bn(model)
@@ -184,30 +191,35 @@ def main():
         model = MMDataParallel(model, device_ids=[0])
         import pickle
 #        outputs = pickle.load(open('bbk.pkl', 'rb'))
-        outputs = da_single_gpu_test(model, data_loader, args.show, args.show_dir,
+        outputs_s = da_single_gpu_test(model, data_loader_s, args.show, args.show_dir,
+                                     args.show_score_thr)
+        outputs_t = da_single_gpu_test(model, data_loader_t, args.show, args.show_dir,
                                      args.show_score_thr)
     else:
         model = MMDistributedDataParallel(
             model.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
-        outputs = multi_gpu_test(model, data_loader, args.tmpdir,
+        outputs = multi_gpu_test(model, data_loader_s, args.tmpdir,
                                  args.gpu_collect)
     rank, _ = get_dist_info()
     if rank == 0:
         if args.out:
             print(f'\nwriting results to {args.out}')
-            mmcv.dump(outputs, args.out)
+            mmcv.dump(outputs_t, args.out)
+            mmcv.dump(outputs_s, "source.pkl")
         kwargs = {} if args.eval_options is None else args.eval_options
         if args.format_only:
-            dataset.format_results(outputs, **kwargs)
+            dataset_s.format_results(outputs_s, **kwargs)
+            dataset_t.format_results(outputs_t, **kwargs)
         if args.eval:
             eval_kwargs = cfg.get('evaluation', {}).copy()
             # hard-code way to remove EvalHook args
             for key in ['interval', 'tmpdir', 'start', 'gpu_collect']:
                 eval_kwargs.pop(key, None)
             eval_kwargs.update(dict(metric=args.eval, **kwargs))
-            print(dataset.evaluate(outputs, **eval_kwargs))
+            print(dataset_s.evaluate(outputs_s, **eval_kwargs))
+            print(dataset_t.evaluate(outputs_t, **eval_kwargs))
 
 
 if __name__ == '__main__':
