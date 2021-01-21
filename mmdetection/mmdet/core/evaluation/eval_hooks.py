@@ -271,7 +271,8 @@ class DADistEvalHook(DAEvalHook):
             print('\n')
             self.evaluate(runner, results)
     def after_iter(self, runner):
-        self.after_train_epoch(runner)
+        if self.every_n_inner_iters(runner, 100):
+            self.after_train_epoch(runner)
     """
     def before_train_epoch(self, runner):
         if not self.evaluation_flag(runner):
