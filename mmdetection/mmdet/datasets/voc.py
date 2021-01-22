@@ -85,3 +85,14 @@ class VOCDataset(XMLDataset):
                 for i, num in enumerate(proposal_nums):
                     eval_results[f'AR@{num}'] = ar[i]
         return eval_results
+
+
+@DATASETS.register_module()
+class VOCCityscapesDataset(VOCDataset):
+
+    CLASSES = ('person', 'rider', 'car', 'truck', 'bus', 'train', 'motorcycle',
+               'bicycle')
+
+    def __init__(self, **kwargs):
+        super(VOCCityscapesDataset, self).__init__(**kwargs)
+

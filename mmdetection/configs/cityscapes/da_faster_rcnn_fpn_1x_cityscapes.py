@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/models/da_faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/da_cityscapes_gta_voc_detection.py',
+    '../_base_/datasets/da_cityscapes_voc_detection.py',
     '../_base_/da_default_runtime.py'
 ]
 model = dict(
@@ -25,7 +25,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=1,
+            num_classes=8,
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0., 0., 0., 0.],
@@ -46,11 +46,11 @@ model = dict(
 # lr is set for a batch size of 8
 optimizer = dict(
     type='SGD',
-    lr=0.001,
+    lr=0.01,
     weight_decay=0.0001)
 optimizer_backbone = dict(
     type='SGD',
-    lr=0.001,
+    lr=0.01,
     weight_decay=0.0001)
 optimizer_discriminator = dict(
     type='SGD',
@@ -71,4 +71,4 @@ log_config = dict(interval=100)
 #load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_cityscapes_20200502-829424c0.pth'
 #load_from = '/lustre/S/wangyu/PretrainedModels/fasterrcnn_r50_fpn_gn_ws_cityscapes.pth'
 #load_from = '/lustre/S/wangyu/aux_normon_ins_step_done/epoch_17.pth'
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'

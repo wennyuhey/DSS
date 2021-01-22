@@ -88,6 +88,10 @@ class EvalHook(Hook):
         results = single_gpu_test(runner.model, self.dataloader, show=False)
         self.evaluate(runner, results)
     """
+    def after_iter(self, runner):
+        if self.every_n_inner_iters(runner, 100):
+            self.after_train_epoch(runner)
+
 class DistEvalHook(EvalHook):
     """Distributed evaluation hook.
 
@@ -136,6 +140,10 @@ class DistEvalHook(EvalHook):
         if runner.rank == 0:
             print('\n')
             self.evaluate(runner, results)
+    def after_iter(self, runner):
+        if self.every_n_inner_iters(runner, 100):
+            self.after_train_epoch(runner)
+
 
 
 class DAEvalHook(DAHook):
@@ -206,6 +214,8 @@ class DAEvalHook(DAHook):
         from mmdet.apis import da_single_gpu_test
         results = da_single_gpu_test(runner.model, self.dataloader, show=False)
         self.evaluate(runner, results)
+    def after_iter(self, runner):
+        self.after_train_epoch(runner)
     """
     def before_train_epoch(self, runner):
         if not self.evaluation_flag(runner):

@@ -12,4 +12,5 @@ model = dict(
             conv_out_channels=256,
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg)))
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'
+optimizer = dict(type='SGD', lr=0.1, momentum=0.9, weight_decay=0.0001)
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'

@@ -10,7 +10,7 @@ from .deepfashion import DeepFashionDataset
 from .lvis import LVISDataset, LVISV1Dataset, LVISV05Dataset
 from .samplers import DistributedGroupSampler, DistributedSampler, GroupSampler
 from .utils import replace_ImageToTensor
-from .voc import VOCDataset
+from .voc import VOCDataset, VOCCityscapesDataset
 from .wider_face import WIDERFaceDataset
 from .xml_style import XMLDataset
 
@@ -21,5 +21,5 @@ __all__ = [
     'DistributedSampler', 'build_dataloader', 'ConcatDataset', 'RepeatDataset',
     'ClassBalancedDataset', 'WIDERFaceDataset', 'DATASETS', 'PIPELINES',
     'build_dataset', 'replace_ImageToTensor', 'CarCityscapesDataset',
-    'CarCocoDataset'
+    'CarCocoDataset', 'VOCCityscapesDataset'
 ]
