@@ -123,7 +123,7 @@ def train_detector(model,
         eval_cfg = cfg.get('evaluation', {})
         eval_hook = DistEvalHook if distributed else EvalHook
         runner.register_hook(eval_hook(val_dataloader, **eval_cfg))
-
+        """
         val_dataset_t = build_dataset(cfg.data_t.val, dict(test_mode=True))
         val_dataloader_t = build_dataloader(
             val_dataset_t,
@@ -134,7 +134,7 @@ def train_detector(model,
         eval_cfg = cfg.get('evaluation', {})
         eval_hook = DistEvalHook if distributed else EvalHook
         runner.register_hook(eval_hook(val_dataloader_t, **eval_cfg))
-
+        """
 
     # user-defined hooks
     if cfg.get('custom_hooks', None):
@@ -167,8 +167,8 @@ def da_train_detector(model,
                       meta=None):
     logger = get_root_logger(cfg.log_level)
     # prepare data loaders
-    if 'Aux' in cfg.model.backbone.type:
-        model.backbone = convert_splitbn_model(model.backbone)
+    #if 'Aux' in cfg.model.backbone.type:
+    #    model.backbone = convert_splitbn_model(model.backbone)
 
     count = 0
     for k, v in model.named_parameters():
@@ -306,7 +306,7 @@ def da_train_detector(model,
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
-    #if 'Aux' in cfg.model.backbone.type:
-    #    runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+    if 'Aux' in cfg.model.backbone.type:
+        runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
 
     runner.run(data_loaders_s, data_loaders_t, cfg.workflow, cfg.total_epochs)

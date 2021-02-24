@@ -1,4 +1,5 @@
 # Copyright (c) Open-MMLab. All rights reserved.
+import pickle
 import os.path as osp
 import platform
 import shutil
@@ -6,7 +7,7 @@ import time
 import warnings
 
 import torch
-
+import torch.nn as nn
 import mmcv
 from .base_runner import BaseRunner
 from .checkpoint import save_checkpoint
@@ -19,19 +20,51 @@ class EpochBasedRunner(BaseRunner):
 
     This runner train models epoch by epoch.
     """
-
     def train(self, data_loader, **kwargs):
+        def register_hook(module):
+            def hook_forward(module, input, output):
+                if isinstance(module, nn.Conv2d):
+                    #print(module)
+                    input_tmp[''.join(str(module).split(','))] = input[0].detach().cpu()
+                    output_tmp[''.join(str(module).split(','))] = output[0].detach().cpu()
+                    weight_tmp[''.join(str(module).split(','))] = module.weight.detach().cpu()
+            def hook_grad(module, grad_input, grad_output):
+                if isinstance(module, nn.Conv2d):
+                    if grad_input[1] != None:
+                        input_grad_tmp[''.join(str(module).split(','))] = grad_input[1].detach().cpu()
+                    #if grad_output[0] != None:
+                     #   output_grad_tmp[''.join(str(module).split(','))] = grad_output[0].detach().cpu()
+            if (
+                not isinstance(module, nn.Sequential)
+                and not isinstance(module, nn.ModuleList)
+            ):
+                hooks.append(module.register_forward_hook(hook_forward))
+                hooks.append(module.register_backward_hook(hook_grad))
+        hooks = []
+        input_save = []
+        output_save = []
+        weight_save = []
+        input_grad_save = []
+        #output_grad_save = []
+
         self.model.train()
+        self.model.module.backbone.layer2[0].apply(register_hook)
         self.mode = 'train'
         self.data_loader = data_loader
-        #self._max_iters = self._max_epochs * len(self.data_loader)
-        self._max_iters = 100
+        self._max_iters = self._max_epochs * len(self.data_loader)
+        #self._max_iters = 100
         self.call_hook('before_train_epoch')
         time.sleep(2)  # Prevent possible deadlock during epoch transition
-        #for i, data_batch in enumerate(self.data_loader):
-        self.iters = iter(self.data_loader)
-        for i in range(self._max_iters):
-            data_batch = self.iters.__next__()
+        for i, data_batch in enumerate(self.data_loader):
+        #self.iters = iter(self.data_loader)
+        #for i in range(self._max_iters):
+            #data_batch = self.iters.__next__()
+            input_tmp = {}
+            output_tmp = {}
+            weight_tmp = {}
+            input_grad_tmp = {}
+            #output_grad_tmp = {}
+
             self._inner_iter = i
             self.call_hook('before_train_iter')
             if self.batch_processor is None:
@@ -49,6 +82,24 @@ class EpochBasedRunner(BaseRunner):
             self.outputs = outputs
             self.call_hook('after_train_iter')
             self._iter += 1
+
+            if i % 100 == 0:
+                input_save.append(input_tmp)
+                output_save.append(output_tmp)
+                weight_save.append(weight_tmp)
+                input_grad_save.append(input_grad_tmp)
+                #output_grad_save.append(output_grad_tmp)
+
+        with open('weight' + str(self._epoch) + '.pkl', 'wb') as f:
+            pickle.dump(weight_save,f)
+        with open('bottomdiff' + str(self._epoch) + '.pkl','wb') as f:
+            pickle.dump(input_grad_save,f)
+
+        output_save = []
+        input_save = []
+        weight_save = []
+        #output_grad_save = []
+        input_grad_save = []
 
         self.call_hook('after_train_epoch')
         self._epoch += 1

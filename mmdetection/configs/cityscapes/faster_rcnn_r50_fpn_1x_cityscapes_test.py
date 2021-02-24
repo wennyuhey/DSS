@@ -1,10 +1,10 @@
 _base_ = [
     '../_base_/models/faster_rcnn_r50_fpn.py',
-    '../_base_/datasets/cityscapes_detection.py',
+    '../_base_/datasets/cityscapes_voc_test_detection.py',
     '../_base_/default_runtime.py'
 ]
 model = dict(
-    pretrained=None,
+#    pretrained=None,
     roi_head=dict(
         bbox_head=dict(
             type='Shared2FCBBoxHead',
@@ -22,8 +22,8 @@ model = dict(
             loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))))
 # optimizer
 # lr is set for a batch size of 8
-optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
-optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+optimizer = dict(type='SGD', lr=0.05, momentum=0.9, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=None, random_grads=True)
 # learning policy
 lr_config = dict(
     policy='step',
@@ -36,4 +36,4 @@ total_epochs = 16  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
 #load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_caffe_c4_1x-75ecfdfa_new.pth'
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth'
+#load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_1x_coco_20200130-047c8118.pth'

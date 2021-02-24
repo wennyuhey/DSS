@@ -1,5 +1,6 @@
 dataset_type = 'CityscapesDataset'
 data_root = 'data/cityscapes/'
+data_root_t = 'data/foggy_cityscapes/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -33,7 +34,7 @@ data = dict(
     workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=1,
+        times=8,
         dataset=dict(
             type=dataset_type,
             ann_file=data_root +
@@ -52,4 +53,29 @@ data = dict(
         'annotations/instancesonly_filtered_gtFine_val.json',
         img_prefix=data_root + 'leftImg8bit/val/',
         pipeline=test_pipeline))
+data_t = dict(
+    samples_per_gpu=2,
+    workers_per_gpu=2,
+    train=dict(
+        type='RepeatDataset',
+        times=8,
+        dataset=dict(
+            type=dataset_type,
+            ann_file=data_root_t +
+            'annotations/instancesonly_filtered_gtFine_train.json',
+            img_prefix=data_root_t + 'leftImg8bit/train/',
+            pipeline=train_pipeline)),
+    val=dict(
+        type=dataset_type,
+        ann_file=data_root_t +
+        'annotations/instancesonly_filtered_gtFine_val.json',
+        img_prefix=data_root_t + 'leftImg8bit/val/',
+        pipeline=test_pipeline),
+    test=dict(
+        type=dataset_type,
+        ann_file=data_root_t +
+        'annotations/instancesonly_filtered_gtFine_val.json',
+        img_prefix=data_root_t + 'leftImg8bit/val/',
+        pipeline=test_pipeline))
+
 evaluation = dict(interval=1, metric='bbox')

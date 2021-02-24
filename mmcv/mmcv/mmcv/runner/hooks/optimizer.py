@@ -2,6 +2,7 @@
 import copy
 
 from torch.nn.utils import clip_grad
+import torch
 
 from ..fp16_utils import allreduce_grads, wrap_fp16_model
 from .hook import HOOKS, Hook
@@ -10,14 +11,27 @@ from .hook import HOOKS, Hook
 @HOOKS.register_module()
 class OptimizerHook(Hook):
 
-    def __init__(self, grad_clip=None):
+    def __init__(self, grad_clip=None, random_grads=None):
         self.grad_clip = grad_clip
+        self.random_grads = random_grads
 
     def clip_grads(self, params):
         params = list(
             filter(lambda p: p.requires_grad and p.grad is not None, params))
         if len(params) > 0:
             return clip_grad.clip_grad_norm_(params, **self.grad_clip)
+
+    def random_grad(self, params):
+        params = list(
+            filter(lambda p: p.requires_grad and p.grad is not None, params))
+        if len(params) > 0:
+            for p in params:
+                if p.shape == torch.Size([1]):
+                    continue
+                pmean = p.grad.mean()
+                pstd = p.grad.std()
+                noise_grad = torch.normal(pmean, pstd, size=p.grad.shape).to(p.device)
+                p.grad.mul_(0.9).add_(noise_grad * 0.1)
 
     def after_train_iter(self, runner):
         runner.optimizer.zero_grad()
@@ -28,6 +42,8 @@ class OptimizerHook(Hook):
                 # Add grad norm to the logger
                 runner.log_buffer.update({'grad_norm': float(grad_norm)},
                                          runner.outputs['num_samples'])
+        if self.random_grads is True:
+            self.random_grad(runner.model.parameters())
         runner.optimizer.step()
 
 

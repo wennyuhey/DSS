@@ -2,7 +2,8 @@
 import copy
 
 from torch.nn.utils import clip_grad
-
+import torch
+import math
 from ..fp16_utils import allreduce_grads, wrap_fp16_model
 from .da_hook import DAHOOKS, DAHook
 import pdb
@@ -20,6 +21,18 @@ class DAOptimizerHook(DAHook):
         if len(params) > 0:
             return clip_grad.clip_grad_norm_(params, **self.grad_clip)
 
+    def random_grads(self, params):
+        params = list(
+            filter(lambda p: p.requires_grad and p.grad is not None, params))
+        if len(params) > 0:
+            for p in params:
+                if p.shape == torch.Size([1]):
+                    continue
+                pmean = p.grad.mean()
+                pstd = p.grad.std()
+                noise_grad = torch.normal(pmean, pstd, size=p.grad.shape).to(p.device)
+                p.grad.mul_(0.99).add_(noise_grad * 0.01)
+
     def after_train_iter(self, runner):
         if isinstance(runner.optimizer, dict):
             for k, optim in runner.optimizer.items():
@@ -33,6 +46,7 @@ class DAOptimizerHook(DAHook):
                 # Add grad norm to the logger
                 runner.log_buffer.update({'grad_norm': float(grad_norm)},
                                          runner.outputs['num_samples'])
+#        self.random_grads(runner.model.parameters())
         if isinstance(runner.optimizer, dict):
             for k, optim in runner.optimizer.items():
                 optim.step()

@@ -3,48 +3,34 @@ _base_ = [
     '../_base_/datasets/da_cityscapes_detection.py',
     '../_base_/da_default_runtime.py'
 ]
+conv_cfg = dict(type='ConvWS')
+norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
+
 model = dict(
-    #pretrained=None,
+    pretrained='open-mmlab://jhu/resnet50_gn_ws',
     backbone=dict(
         type='ResNet',
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        #norm_cfg=dict(
-        #    type='GN',
-        #    num_groups=32,
-        #    requires_grad=True),
-        norm_cfg=dict(type='BN', requires_grad=True),
+        conv_cfg=conv_cfg,
+        norm_cfg=norm_cfg,
         norm_eval=False,
         style='pytorch'),
-    neck=None,
-    #domain_mask=dict(
-    #    type='DAChannelMask',
-    #    in_channels=256,
-    #    att_dim=128),
-    domain_mask=None,
+    neck=dict(conv_cfg=conv_cfg, norm_cfg=norm_cfg),
     roi_head=dict(
         bbox_head=dict(
-            type='Shared2FCBBoxHead',
-            in_channels=256,
-            fc_out_channels=1024,
-            roi_feat_size=7,
+        type='Shared4Conv1FCBBoxHead',
             num_classes=8,
-     #       norm_cfg=dict(type='GN', num_group=32, requires_grad=True),
-            bbox_coder=dict(
-                type='DeltaXYWHBBoxCoder',
-                target_means=[0., 0., 0., 0.],
-                target_stds=[0.1, 0.1, 0.2, 0.2]),
-            reg_class_agnostic=False,
-            loss_cls=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0),
-            loss_bbox=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0))),
-     feat_dis_head=dict(
+            conv_out_channels=256,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg)),
+    feat_dis_head=dict(
         type='DAFeatDiscriminator',
         in_channels=256),
-#     feat_dis_head=None,
-     ins_dis_head=None)
+    ins_dis_head=None,
+    domain_mask=None)
      #ins_dis_head=dict(
      #    type='DAInsDiscriminator',
      #   in_channels=256*7*7))
@@ -70,8 +56,8 @@ lr_config = dict(
     warmup_iters=500,
     warmup_ratio=0.001,
     # [7] yields higher performance than [6]
-    step=[37])
+    step=[35])
 total_epochs = 40  # actual epoch = 8 * 8 = 64
 log_config = dict(interval=100)
 # For better, more stable performance initialize from COCO
-load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_c4_1x-642cf91f.pth'
+# load_from = '/lustre/S/wangyu/PretrainedModels/faster_rcnn_r50_fpn_gn_ws-all_1x_coco_20200130-613d9fe2.pth'

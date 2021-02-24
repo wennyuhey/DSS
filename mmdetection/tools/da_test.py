@@ -207,10 +207,10 @@ def main():
         if args.out:
             print(f'\nwriting results to {args.out}')
             mmcv.dump(outputs_t, args.out)
-            mmcv.dump(outputs_s, "source.pkl")
+            #mmcv.dump(outputs_s, "source.pkl")
         kwargs = {} if args.eval_options is None else args.eval_options
         if args.format_only:
-            dataset_s.format_results(outputs_s, **kwargs)
+            #dataset_s.format_results(outputs_s, **kwargs)
             dataset_t.format_results(outputs_t, **kwargs)
         if args.eval:
             eval_kwargs = cfg.get('evaluation', {}).copy()
