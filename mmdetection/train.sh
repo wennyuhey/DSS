@@ -1,1 +1,1 @@
-sh tools/da_dist_train.sh configs/gn+ws/da_faster_rcnn_fpn_gn_ws_1x_cityscapes.py 4
+sh tools/da_dist_train.sh configs/da/da_faster_rcnn_fpn_dss_1x_cityscapes.py 8

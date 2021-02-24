@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/datasets/da_cityscapes_detection.py',
     '../_base_/da_default_runtime.py'
 ]
-conv_cfg = dict(type='ConvWS')
+conv_cfg = dict(type='ConvWM')
 norm_cfg = dict(type='GN', num_groups=32, requires_grad=True)
 
 model = dict(
