@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 python tools/da_train.py configs/reppoints/da_reppoints_moment_r101_fpn_dconv_c3-c5_gn-neck+head_2x_cityscapes.py --resume-from /lustre/S/wangyu/da_train/median/discriminator-first/epoch_13.pth --work-dir /lustre/S/wangyu/da_train/median/discriminator-first/generator-first/
+sh tools/da_dist_train.sh configs/gn+ws/da_faster_rcnn_fpn_gn_ws_1x_cityscapes.py 4

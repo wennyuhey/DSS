@@ -166,14 +166,6 @@ def da_train_detector(model,
                       timestamp=None,
                       meta=None):
     logger = get_root_logger(cfg.log_level)
-    # prepare data loaders
-    #if 'Aux' in cfg.model.backbone.type:
-    #    model.backbone = convert_splitbn_model(model.backbone)
-
-    count = 0
-    for k, v in model.named_parameters():
-        print("{}: {} {}\n".format(count,k, v.size()))
-        count+= 1
 
     dataset_s = dataset_s if isinstance(dataset_s, (list, tuple)) else [dataset_s]
     dataset_t = dataset_t if isinstance(dataset_t, (list, tuple)) else [dataset_t]
@@ -303,10 +295,15 @@ def da_train_detector(model,
             runner.register_hook(hook, priority=priority)
     
     if cfg.resume_from:
+        if 'Aux' in cfg.model.backbone.type:
+            runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
         runner.resume(cfg.resume_from)
     elif cfg.load_from:
         runner.load_checkpoint(cfg.load_from)
-    if 'Aux' in cfg.model.backbone.type:
-        runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+        if 'Aux' in cfg.model.backbone.type:
+            runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
+    else:
+        if 'Aux' in cfg.model.backbone.type:
+            runner.model.module.backbone = convert_splitbn_model(runner.model.module.backbone)
 
     runner.run(data_loaders_s, data_loaders_t, cfg.workflow, cfg.total_epochs)
