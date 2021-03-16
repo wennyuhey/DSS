@@ -267,7 +267,7 @@ def da_train_detector(model,
         eval_cfg = cfg.get('evaluation', {})
         eval_hook = DADistEvalHook if distributed else DAEvalHook
         runner.register_hook(eval_hook(val_dataloader, **eval_cfg))
-        
+        """ 
         val_dataset_s = build_dataset(cfg.data_s.val, dict(test_mode=True))
         val_dataloader_s = build_dataloader(
             val_dataset_s,
@@ -278,7 +278,7 @@ def da_train_detector(model,
         eval_cfg = cfg.get('evaluation', {})
         eval_hook = DADistEvalHook if distributed else DAEvalHook
         runner.register_hook(eval_hook(val_dataloader_s, **eval_cfg))
-
+        """
 
     # user-defined hooks
     if cfg.get('custom_hooks', None):
